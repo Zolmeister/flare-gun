@@ -23,6 +23,10 @@ describe('Flare Gun', function () {
     server.use(restify.bodyParser({ mapParams: false }))
 
     server.get('/hello/:name', respond)
+    server.get('/hello/:name/:friend', function (req, res, next) {
+      res.send('hello ' + req.params.name + ' from ' + req.params.friend)
+      next()
+    })
 
     server.get('/mirror', mirror)
     server.post('/mirror', mirror)
@@ -118,6 +122,16 @@ describe('Flare Gun', function () {
             string: Joi.string(),
             num: Joi.number()
         })
+      })
+  })
+
+  it('stashes', function () {
+    return flare
+      .post('/mirror', {text: 'boom', friend: 'mob'})
+      .stash('mirror')
+      .get('/hello/:mirror.text/:mirror.friend')
+      .expect(200, function (res) {
+        assert(res.body === '"hello boom from mob"')
       })
   })
 })

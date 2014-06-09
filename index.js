@@ -31,8 +31,35 @@ Promise.del = function Promise$route(url, body) {
   return Promise.resolve(new Flare()).del(url, body)
 }
 
+function fillUri(uri, source) {
+  var vars = uri.match(/\/:[\w.]+/g)
+  if (vars) {
+    for (var i = 0; i < vars.length; i++) {
+      var key = vars[i]
+      var name = key
+      name = name.slice(name.indexOf(':') + 1, name.indexOf('.'))
+
+      var pointer = source[name]
+
+      var params = key.match(/\.\w+/g)
+      for (var j = 0; j < params.length; j++) {
+        pointer = pointer[params[j].slice(1)]
+      }
+
+      uri = uri.replace(key, '/' + pointer)
+    }
+  }
+
+  return uri
+}
+
 Promise.prototype.request = function (opts) {
+
   return this._then(function (flare) {
+
+    // materialize the stash
+    opts.uri = fillUri(opts.uri, flare.stash)
+
     return new Promise(function (resolve, reject) {
       _request(opts, function (err, res) {
         if (err) {
@@ -104,20 +131,35 @@ Promise.prototype.expect = function (statusCode, schema) {
       var status = flare.res.statusCode
 
       if (status !== statusCode) {
-        throw new Error('Status Code: ' + status)
+        return reject(new Error('Status Code: ' + status))
       }
 
       if (!schema) {
         return resolve(flare)
       }
 
+      if (typeof schema === 'function') {
+        try {
+          return resolve(schema(flare.res))
+        } catch(err) {
+          return reject(err)
+        }
+      }
+
       Joi.validate(flare.res.body, schema, function (err) {
         if (err) {
-          reject(err)
+          return reject(err)
         }
 
         resolve(flare)
       })
     })
+  })
+}
+
+Promise.prototype.stash = function (name) {
+  return this._then(function (flare) {
+    flare.stash[name] = flare.res.body
+    return flare
   })
 }
