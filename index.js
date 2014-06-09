@@ -2,13 +2,19 @@
 var Promise = require('bluebird/js/main/promise')()
 var _request = require('request')
 var Joi = require('joi')
+var fs = Promise.promisifyAll(require('fs'))
+var _ = require('lodash')
 
 module.exports = Promise
 
-function Flare() {
-  this.path = ''
-  this.stash = {}
-  this.res = {}
+function Flare(opts) {
+  opts = opts || {}
+  this.docFile = opts.docFile || ''
+  this.path = opts.path || ''
+  this.stash = opts.stash || {}
+  this.res = opts.res || {}
+  this.schema = opts.schema || {}
+  this.req = opts.res || {}
 }
 
 Promise.route = function Promise$route(url) {
@@ -29,6 +35,10 @@ Promise.put = function Promise$route(url, body) {
 
 Promise.del = function Promise$route(url, body) {
   return Promise.resolve(new Flare()).del(url, body)
+}
+
+Promise.docFile = function Promise$docFile(path) {
+  return Promise.resolve(new Flare()).docFile(path)
 }
 
 function fillUri(uri, source) {
@@ -53,12 +63,53 @@ function fillUri(uri, source) {
   return uri
 }
 
+Promise.prototype.docFile = function Promise$docFile(path) {
+  return this._then(function (flare) {
+    flare.docFile = path
+    return flare
+  })
+}
+
+Promise.prototype.doc = function Promise$doc(title, description) {
+  return this._then(function (flare) {
+    if (!flare.docFile) {
+      throw new Error('docFile not specified')
+    }
+    return fs.readFileAsync(flare.docFile)
+      .then(function (file) {
+        return JSON.parse(file)
+      }, function (err) {
+        return []
+      })
+      .then(function (docs) {
+        docs.push({
+          title: title,
+          description: description,
+          req: flare.req,
+          res: flare.res,
+          schema: flare.schema
+        })
+
+        // clear out doc state
+        flare = new Flare({
+          docFile: flare.docFile,
+          stash: flare.stash
+        })
+
+        return fs.writeFileAsync(flare.docFile, JSON.stringify(docs))
+      }).then(function () {
+        return flare
+      })
+  })
+}
+
 Promise.prototype.request = function (opts) {
 
   return this._then(function (flare) {
 
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stash)
+    flare.req = opts
 
     return new Promise(function (resolve, reject) {
       _request(opts, function (err, res) {
@@ -69,7 +120,7 @@ Promise.prototype.request = function (opts) {
         resolve(res)
       })
     }).then(function (res) {
-      flare.res = res
+      flare.res = _.pick(res, ['statusCode', 'headers', 'body'])
       return flare
     })
   })
@@ -127,6 +178,8 @@ Promise.prototype.del = function (uri, body) {
 
 Promise.prototype.expect = function (statusCode, schema) {
   return this._then(function (flare) {
+
+    flare.schema = schema
     return new Promise(function (resolve, reject) {
       var status = flare.res.statusCode
 

@@ -5,6 +5,7 @@ var flare = require('../').route('http://localhost:3001')
 var assert = require('assert')
 var restify = require('restify')
 var Joi = require('joi')
+var fs = require('fs')
 
 describe('Flare Gun', function () {
   before(function (done) {
@@ -132,6 +133,26 @@ describe('Flare Gun', function () {
       .get('/hello/:mirror.text/:mirror.friend')
       .expect(200, function (res) {
         assert(res.body === '"hello boom from mob"')
+      })
+  })
+
+  it('docs', function () {
+    return flare
+      .docFile(__dirname + '/flare_doc.json')
+      .post('/mirror', {my: 'me'})
+      .expect(200, {
+        my: Joi.string()
+      })
+      .doc('Hello', 'Say hello to Joe')
+      .then(function () {
+        var doc = JSON.parse(fs.readFileSync(__dirname + '/flare_doc.json'))
+        assert(doc[0].title === 'Hello')
+        assert(doc[0].description === 'Say hello to Joe')
+        assert(doc[0].req.uri.indexOf('/mirror') !== -1)
+        assert(doc[0].req.method === 'post')
+        assert(doc[0].req.json.my === 'me')
+        assert(doc[0].schema.my)
+        assert(doc[0].res.body.my === 'me')
       })
   })
 })
