@@ -1,36 +1,39 @@
 'use strict'
 var Promise = require('bluebird/js/main/promise')()
-var request = require('request')
+var _request = require('request')
+
+module.exports = Promise
 
 function Flare() {
   this.path = ''
   this.stash = {}
-  this.current = {}
-}
-
-Promise.get = function Promise$get(url) {
-  return Promise.resolve(new Flare()).get(url)
+  this.res = {}
 }
 
 Promise.route = function Promise$route(url) {
   return Promise.resolve(new Flare()).route(url)
 }
 
+Promise.get = function Promise$get(url) {
+  return Promise.resolve(new Flare()).get(url)
+}
+
 Promise.post = function Promise$route(url, body) {
   return Promise.resolve(new Flare()).post(url, body)
 }
 
-Promise.prototype.route = function(url) {
-  return this._then(function (flare) {
-    flare.path = url
-    return flare
-  })
+Promise.put = function Promise$route(url, body) {
+  return Promise.resolve(new Flare()).put(url, body)
 }
 
-Promise.prototype.get = function (url) {
+Promise.del = function Promise$route(url, body) {
+  return Promise.resolve(new Flare()).del(url, body)
+}
+
+Promise.prototype.request = function (opts) {
   return this._then(function (flare) {
     return new Promise(function (resolve, reject) {
-      request.get(flare.path + url, function (err, res) {
+      _request(opts, function (err, res) {
         if (err) {
           return reject(err)
         }
@@ -38,38 +41,69 @@ Promise.prototype.get = function (url) {
         resolve(res)
       })
     }).then(function (res) {
-      flare.current = res
+      flare.res = res
       return flare
     })
   })
 }
 
-Promise.prototype.post = function (url , body) {
+Promise.prototype.route = function (uri) {
   return this._then(function (flare) {
-    return new Promise(function (resolve, reject) {
-      request.post(flare.path + url, body, function (err, res) {
-        if (err) {
-          return reject(err)
-        }
+    flare.path = uri
+    return flare
+  })
+}
 
-        resolve(res)
-      })
-    }).then(function (res) {
-      flare.current = res
-      return flare
+Promise.prototype.get = function (uri) {
+  var self = this
+  return this._then(function (flare) {
+    return self.request({
+      method: 'get',
+      uri: flare.path + uri
+    })
+  })
+}
+
+Promise.prototype.post = function (uri, body) {
+  var self = this
+  return this._then(function (flare) {
+    return self.request({
+      method: 'post',
+      uri: flare.path + uri,
+      json: body
+    })
+  })
+}
+
+Promise.prototype.put = function (uri, body) {
+  var self = this
+  return this._then(function (flare) {
+    return self.request({
+      method: 'put',
+      uri: flare.path + uri,
+      json: body
+    })
+  })
+}
+
+Promise.prototype.del = function (uri, body) {
+  var self = this
+  return this._then(function (flare) {
+    return self.request({
+      method: 'delete',
+      uri: flare.path + uri,
+      json: body
     })
   })
 }
 
 Promise.prototype.expect = function (statusCode) {
   return this._then(function (flare) {
-    var status = flare.current.statusCode
+    var status = flare.res.statusCode
+
     if (status !== statusCode) {
       throw new Error('Status Code: ' + status)
     }
-
     return flare
   })
 }
-
-module.exports = Promise

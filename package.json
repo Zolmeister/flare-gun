@@ -18,6 +18,7 @@
   "homepage": "https://github.com/Zolmeister/flare-gun",
   "dependencies": {
     "bluebird": "2.0.7",
+    "joi": "4.6.0",
     "request": "2.36.0"
   },
   "devDependencies": {
