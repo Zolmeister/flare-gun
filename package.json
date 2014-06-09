@@ -1,0 +1,26 @@
+{
+  "name": "flare-gun",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zolmeister/flare-gun.git"
+  },
+  "author": "Zolmeister",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Zolmeister/flare-gun/issues"
+  },
+  "homepage": "https://github.com/Zolmeister/flare-gun",
+  "dependencies": {
+    "bluebird": "2.0.7",
+    "request": "2.36.0"
+  },
+  "devDependencies": {
+    "restify": "2.8.1"
+  }
+}
