@@ -1,6 +1,7 @@
 'use strict'
 var Promise = require('bluebird/js/main/promise')()
 var _request = require('request')
+var Joi = require('joi')
 
 module.exports = Promise
 
@@ -97,13 +98,26 @@ Promise.prototype.del = function (uri, body) {
   })
 }
 
-Promise.prototype.expect = function (statusCode) {
+Promise.prototype.expect = function (statusCode, schema) {
   return this._then(function (flare) {
-    var status = flare.res.statusCode
+    return new Promise(function (resolve, reject) {
+      var status = flare.res.statusCode
 
-    if (status !== statusCode) {
-      throw new Error('Status Code: ' + status)
-    }
-    return flare
+      if (status !== statusCode) {
+        throw new Error('Status Code: ' + status)
+      }
+
+      if (!schema) {
+        return resolve(flare)
+      }
+
+      Joi.validate(flare.res.body, schema, function (err) {
+        if (err) {
+          reject(err)
+        }
+
+        resolve(flare)
+      })
+    })
   })
 }

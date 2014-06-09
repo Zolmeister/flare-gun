@@ -92,13 +92,7 @@ describe('Flare Gun', function () {
   it('expects support joi schema', function () {
     return flare
       .post('/mirror', {
-        string: 'str',
-        num: 123,
-        extra: 'x',
-        nest: {
-          string: 'str',
-          num: 123
-        }
+        err: 'none'
       })
       .expect(200, {
         err: 'err'
@@ -106,12 +100,12 @@ describe('Flare Gun', function () {
       .then(function () {
         throw 'Did not catch invalid'
       }, function (err) {
-        console.log(err.message);
+        assert(err.message.length > 0)
+        return flare
       })
       .post('/mirror', {
         string: 'str',
         num: 123,
-        extra: 'x',
         nest: {
           string: 'str',
           num: 123
@@ -122,7 +116,7 @@ describe('Flare Gun', function () {
         num: Joi.number(),
         nest: Joi.object().keys({
             string: Joi.string(),
-            b: 123
+            num: Joi.number()
         })
       })
   })
