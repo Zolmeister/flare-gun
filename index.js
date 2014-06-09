@@ -45,22 +45,25 @@ function fillUri(uri, source) {
   var vars = uri.match(/\/:[\w.]+/g)
   if (vars) {
     for (var i = 0; i < vars.length; i++) {
-      var key = vars[i]
-      var name = key
-      name = name.slice(name.indexOf(':') + 1, name.indexOf('.'))
-
-      var pointer = source[name]
-
-      var params = key.match(/\.\w+/g)
-      for (var j = 0; j < params.length; j++) {
-        pointer = pointer[params[j].slice(1)]
-      }
-
-      uri = uri.replace(key, '/' + pointer)
+      uri = uri.replace(vars[i], '/' + fillString(vars[i], source))
     }
   }
 
   return uri
+}
+
+function fillString(param, source) {
+  var name = param
+  name = name.slice(name.indexOf(':') + 1, name.indexOf('.'))
+
+  var pointer = source[name]
+
+  var params = param.match(/\.\w+/g)
+  for (var j = 0; j < params.length; j++) {
+    pointer = pointer[params[j].slice(1)]
+  }
+
+  return pointer
 }
 
 Promise.prototype.docFile = function Promise$docFile(path) {
@@ -91,15 +94,27 @@ Promise.prototype.doc = function Promise$doc(title, description) {
         })
 
         // clear out doc state
-        flare = new Flare({
-          docFile: flare.docFile,
-          stash: flare.stash
-        })
+        delete flare.schema
+        delete flare.req
 
         return fs.writeFileAsync(flare.docFile, JSON.stringify(docs))
       }).then(function () {
         return flare
       })
+  })
+}
+
+function fillJson(json, source) {
+  return _.mapValues(_.cloneDeep(json), function (val) {
+    if (_.isPlainObject(val)) {
+      return fillJson(val, source)
+    }
+
+    if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
+      return fillString(val, source)
+    }
+
+    return val
   })
 }
 
@@ -109,6 +124,7 @@ Promise.prototype.request = function (opts) {
 
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stash)
+    opts.json = opts.json && fillJson(opts.json, flare.stash)
     flare.req = opts
 
     return new Promise(function (resolve, reject) {
@@ -183,8 +199,12 @@ Promise.prototype.expect = function (statusCode, schema) {
     return new Promise(function (resolve, reject) {
       var status = flare.res.statusCode
 
-      if (status !== statusCode) {
+      if (typeof status === 'number' && status !== statusCode) {
         return reject(new Error('Status Code: ' + status))
+      }
+
+      if (typeof status === 'function') {
+        schema = status
       }
 
       if (!schema) {
@@ -193,7 +213,8 @@ Promise.prototype.expect = function (statusCode, schema) {
 
       if (typeof schema === 'function') {
         try {
-          return resolve(schema(flare.res))
+          schema(flare.res)
+          return resolve(flare)
         } catch(err) {
           return reject(err)
         }

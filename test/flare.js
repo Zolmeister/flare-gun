@@ -136,6 +136,16 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('stashes with bodies', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .post('/mirror', {text: ':mirror.text'})
+      .expect(200, {
+        text: Joi.string('boom').required()
+      })
+  })
+
   it('docs', function () {
     return flare
       .docFile(__dirname + '/flare_doc.json')
@@ -143,16 +153,39 @@ describe('Flare Gun', function () {
       .expect(200, {
         my: Joi.string()
       })
-      .doc('Hello', 'Say hello to Joe')
-      .then(function () {
+      .doc('Hello', 'Say hello to the mirror')
+      .then(function (flare) {
         var doc = JSON.parse(fs.readFileSync(__dirname + '/flare_doc.json'))
         assert(doc[0].title === 'Hello')
-        assert(doc[0].description === 'Say hello to Joe')
+        assert(doc[0].description === 'Say hello to the mirror')
         assert(doc[0].req.uri.indexOf('/mirror') !== -1)
         assert(doc[0].req.method === 'post')
         assert(doc[0].req.json.my === 'me')
         assert(doc[0].schema.my)
         assert(doc[0].res.body.my === 'me')
+
+        return flare
       })
+      .get('/hello/joe')
+      .expect(200, function (res) {
+        assert(res.body)
+      })
+      .doc('Hello', 'Say hello to joe')
+      .put('/mirror', {re: 'flect'})
+      .expect(200, {
+        re: Joi.string()
+      })
+      .doc('Hello', 'Reflect joe')
+      .get('/404')
+      .expect(404)
+      .doc('Errors', '404 error!!!!!!')
+      .get('/rawr')
+      .expect(404)
+      .doc('Errors', '404 error!!!!!!')
+      .del('/mirror', {de: 'lete'})
+      .expect(200, {
+        de: Joi.string()
+      })
+      .doc('Delete', 'No errors here')
   })
 })
