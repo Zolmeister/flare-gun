@@ -22,11 +22,25 @@ describe('Flare Gun', function () {
 
     var server = restify.createServer()
     server.use(restify.bodyParser({ mapParams: false }))
+    server.use(restify.authorizationParser())
 
     server.get('/hello/:name', respond)
     server.get('/hello/:name/:friend', function (req, res, next) {
       res.send('hello ' + req.params.name + ' from ' + req.params.friend)
       next()
+    })
+
+    server.get('/authed', function (req, res) {
+      if (!req.authorization || !req.authorization.basic) {
+        return res.send(401)
+      }
+      var user = req.authorization.basic.username
+      var pass = req.authorization.basic.password
+
+      res.json({
+        user: user,
+        pass: pass
+      })
     })
 
     server.get('/mirror', mirror)
@@ -187,5 +201,25 @@ describe('Flare Gun', function () {
         de: Joi.string()
       })
       .doc('Delete', 'No errors here')
+  })
+
+  it('acts', function () {
+    return flare
+      .actor('joe', {
+        auth: {
+          user: 'joe',
+          pass: 'joePass'
+        }
+      })
+      .actor('anon')
+      .as('anon')
+      .get('/authed')
+      .expect(401)
+      .as('joe')
+      .get('/authed')
+      .expect(200, {
+        user: 'joe',
+        pass: 'joePass'
+      })
   })
 })

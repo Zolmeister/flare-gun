@@ -15,6 +15,10 @@ function Flare(opts) {
   this.res = opts.res || {}
   this.schema = opts.schema || {}
   this.req = opts.res || {}
+  this.actors = opts.actors || {}
+  this.currentActor = opts.currentActor || {
+    req: {}
+  }
 }
 
 Promise.route = function Promise$route(url) {
@@ -41,6 +45,10 @@ Promise.docFile = function Promise$docFile(path) {
   return Promise.resolve(new Flare()).docFile(path)
 }
 
+Promise.actor = function Promise$actor(name, req) {
+  return Promise.resolve(new Flare()).actor(name, req)
+}
+
 function fillUri(uri, source) {
   var vars = uri.match(/\/:[\w.]+/g)
   if (vars) {
@@ -64,6 +72,20 @@ function fillString(param, source) {
   }
 
   return pointer
+}
+
+Promise.prototype.actor = function (name, req) {
+  return this._then(function (flare) {
+    flare.actors[name] = req || {}
+    return flare
+  })
+}
+
+Promise.prototype.as = function (name) {
+  return this._then(function (flare) {
+    flare.currentActor = flare.actors[name]
+    return flare
+  })
 }
 
 Promise.prototype.docFile = function Promise$docFile(path) {
@@ -125,7 +147,7 @@ Promise.prototype.request = function (opts) {
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stash)
     opts.json = opts.json && fillJson(opts.json, flare.stash)
-    flare.req = opts
+    flare.req = _.defaults(opts, flare.currentActor)
 
     return new Promise(function (resolve, reject) {
       _request(opts, function (err, res) {
