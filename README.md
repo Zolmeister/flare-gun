@@ -1,7 +1,7 @@
 # REST JSON API testing framework - using Promises
 
 ```js
-var flare = require('flare-gun').route('http://localhost:3001')
+var flare = new require('flare-gun')().route('http://localhost:3001')
 
 return flare
   .request({
