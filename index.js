@@ -5,7 +5,7 @@ var Joi = require('joi')
 var fs = Promise.promisifyAll(require('fs'))
 var _ = require('lodash')
 
-module.exports = Promise
+module.exports = Flare
 
 function Flare(opts) {
   opts = opts || {}
@@ -16,37 +16,25 @@ function Flare(opts) {
   this.schema = opts.schema || {}
   this.req = opts.res || {}
   this.actors = opts.actors || {}
-  this.currentActor = opts.currentActor || {
-    req: {}
+  this.currentActor = opts.currentActor || {}
+  this._isFlare = true
+}
+
+Flare.prototype = Object.create(Promise)
+
+Promise.route = classToInstanceFn('route')
+Promise.get = classToInstanceFn('get')
+Promise.post = classToInstanceFn('post')
+Promise.put = classToInstanceFn('put')
+Promise.del = classToInstanceFn('del')
+Promise.docFile = classToInstanceFn('docFile')
+Promise.actor = classToInstanceFn('actor')
+
+function classToInstanceFn(name) {
+  return function () {
+    var promise = Promise.resolve(this).bind(this)
+    return promise[name].apply(promise, arguments)
   }
-}
-
-Promise.route = function Promise$route(url) {
-  return Promise.resolve(new Flare()).route(url)
-}
-
-Promise.get = function Promise$get(url) {
-  return Promise.resolve(new Flare()).get(url)
-}
-
-Promise.post = function Promise$route(url, body) {
-  return Promise.resolve(new Flare()).post(url, body)
-}
-
-Promise.put = function Promise$route(url, body) {
-  return Promise.resolve(new Flare()).put(url, body)
-}
-
-Promise.del = function Promise$route(url, body) {
-  return Promise.resolve(new Flare()).del(url, body)
-}
-
-Promise.docFile = function Promise$docFile(path) {
-  return Promise.resolve(new Flare()).docFile(path)
-}
-
-Promise.actor = function Promise$actor(name, req) {
-  return Promise.resolve(new Flare()).actor(name, req)
 }
 
 function fillUri(uri, source) {
@@ -75,28 +63,32 @@ function fillString(param, source) {
 }
 
 Promise.prototype.actor = function (name, req) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     flare.actors[name] = req || {}
     return flare
   })
 }
 
 Promise.prototype.as = function (name) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     flare.currentActor = flare.actors[name]
     return flare
   })
 }
 
 Promise.prototype.docFile = function Promise$docFile(path) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     flare.docFile = path
     return flare
   })
 }
 
 Promise.prototype.doc = function Promise$doc(title, description) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     if (!flare.docFile) {
       throw new Error('docFile not specified')
     }
@@ -141,8 +133,8 @@ function fillJson(json, source) {
 }
 
 Promise.prototype.request = function (opts) {
-
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
 
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stash)
@@ -165,7 +157,8 @@ Promise.prototype.request = function (opts) {
 }
 
 Promise.prototype.route = function (uri) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     flare.path = uri
     return flare
   })
@@ -173,7 +166,8 @@ Promise.prototype.route = function (uri) {
 
 Promise.prototype.get = function (uri) {
   var self = this
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     return self.request({
       method: 'get',
       uri: flare.path + uri
@@ -183,7 +177,8 @@ Promise.prototype.get = function (uri) {
 
 Promise.prototype.post = function (uri, body) {
   var self = this
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     return self.request({
       method: 'post',
       uri: flare.path + uri,
@@ -194,7 +189,8 @@ Promise.prototype.post = function (uri, body) {
 
 Promise.prototype.put = function (uri, body) {
   var self = this
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     return self.request({
       method: 'put',
       uri: flare.path + uri,
@@ -205,7 +201,8 @@ Promise.prototype.put = function (uri, body) {
 
 Promise.prototype.del = function (uri, body) {
   var self = this
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     return self.request({
       method: 'delete',
       uri: flare.path + uri,
@@ -215,7 +212,8 @@ Promise.prototype.del = function (uri, body) {
 }
 
 Promise.prototype.expect = function (statusCode, schema) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
 
     flare.schema = schema
     return new Promise(function (resolve, reject) {
@@ -254,7 +252,8 @@ Promise.prototype.expect = function (statusCode, schema) {
 }
 
 Promise.prototype.stash = function (name) {
-  return this._then(function (flare) {
+  var flare = this._boundTo
+  return this._then(function () {
     flare.stash[name] = flare.res.body
     return flare
   })

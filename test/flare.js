@@ -1,11 +1,13 @@
 /*globals describe, it, before*/
 'use strict'
 
-var flare = require('../').route('http://localhost:3001')
+var Flare = require('../')
+var flare = new Flare().route('http://localhost:3001')
 var assert = require('assert')
 var restify = require('restify')
 var Joi = require('joi')
 var fs = require('fs')
+var _ = require('lodash')
 
 describe('Flare Gun', function () {
   before(function (done) {

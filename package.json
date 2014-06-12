@@ -1,6 +1,6 @@
 {
   "name": "flare-gun",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "description": "REST API endpoint testing library",
   "keywords": [
     "testing",
