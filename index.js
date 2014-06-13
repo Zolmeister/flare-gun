@@ -54,6 +54,7 @@ function fillString(param, source) {
 
   var pointer = source[name]
 
+
   var params = param.match(/\.\w+/g)
   for (var j = 0; j < params.length; j++) {
     pointer = pointer[params[j].slice(1)]
@@ -119,7 +120,7 @@ Promise.prototype.doc = function Promise$doc(title, description) {
 }
 
 function fillJson(json, source) {
-  return _.mapValues(_.cloneDeep(json), function (val) {
+  return _.mapValues(json, function (val) {
     if (_.isPlainObject(val)) {
       return fillJson(val, source)
     }
@@ -215,7 +216,7 @@ Promise.prototype.expect = function (statusCode, schema) {
   var flare = this._boundTo
   return this._then(function () {
 
-    flare.schema = schema
+    flare.schema = fillJson(schema, flare.stash)
     return new Promise(function (resolve, reject) {
       var status = flare.res.statusCode
 
@@ -224,7 +225,7 @@ Promise.prototype.expect = function (statusCode, schema) {
       }
 
       if (typeof status === 'function') {
-        schema = status
+        flare.schema = status
       }
 
       if (!schema) {
@@ -240,7 +241,7 @@ Promise.prototype.expect = function (statusCode, schema) {
         }
       }
 
-      Joi.validate(flare.res.body, schema, function (err) {
+      Joi.validate(flare.res.body, flare.schema, function (err) {
         if (err) {
           return reject(err)
         }

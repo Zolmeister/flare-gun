@@ -142,6 +142,17 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('expects support schema with stash', function () {
+    return flare
+      .post('/mirror', {
+        string: 'str'
+      })
+      .stash('joe')
+      .expect(200, {
+        string: ':joe.string'
+      })
+  })
+
   it('stashes', function () {
     return flare
       .post('/mirror', {text: 'boom', friend: 'mob'})
