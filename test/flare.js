@@ -151,6 +151,14 @@ describe('Flare Gun', function () {
       .expect(200, {
         string: ':joe.string'
       })
+      .post('/mirror', [
+        {
+          a: 'b'
+        }
+      ])
+      .expect(200, Joi.array().includes({
+        a: 'b'
+      }))
   })
 
   it('stashes', function () {

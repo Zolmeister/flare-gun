@@ -120,17 +120,17 @@ Promise.prototype.doc = function Promise$doc(title, description) {
 }
 
 function fillJson(json, source) {
-  return _.mapValues(json, function (val) {
+  _.forEach(json, function (val, key) {
     if (_.isPlainObject(val)) {
       return fillJson(val, source)
     }
 
     if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
-      return fillString(val, source)
+      json[key] = fillString(val, source)
     }
-
-    return val
   })
+
+  return json
 }
 
 Promise.prototype.request = function (opts) {
