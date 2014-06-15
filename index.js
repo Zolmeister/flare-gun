@@ -255,7 +255,14 @@ Promise.prototype.expect = function (statusCode, schema) {
 Promise.prototype.stash = function (name) {
   var flare = this._boundTo
   return this._then(function () {
-    flare.stash[name] = flare.res.body
+    var body = flare.res.body
+
+    if (_.isString(body) && flare.res.headers &&
+    _.contains(flare.res.headers['content-type'], 'application/json')) {
+      body = JSON.parse(body)
+    }
+
+    flare.stash[name] = body
     return flare
   })
 }

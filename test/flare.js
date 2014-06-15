@@ -169,6 +169,11 @@ describe('Flare Gun', function () {
       .expect(200, function (res) {
         assert(res.body === '"hello boom from mob"')
       })
+      .post('/mirror', {text: ':mirror.boom', friend: ':mirror.mob'})
+      .expect(200, {
+        text: 'boom',
+        friend: 'mob'
+      })
   })
 
   it('stashes with bodies', function () {
