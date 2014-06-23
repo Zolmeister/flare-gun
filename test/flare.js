@@ -1,6 +1,7 @@
 /*globals describe, it, before*/
 'use strict'
 
+var Promise = require('bluebird')
 var Flare = require('../')
 var flare = new Flare().route('http://localhost:3001')
 var assert = require('assert')
@@ -246,6 +247,20 @@ describe('Flare Gun', function () {
       .expect(200, {
         user: 'joe',
         pass: 'joePass'
+      })
+  })
+
+  it('composes promises', function () {
+    return flare
+      .then(function (flare) {
+        return Promise.resolve('x').return(flare)
+      })
+      .then(function (flare) {
+        return Promise.map([1,2,3], function () {
+          return flare
+            .post('/mirror', {a: 'bc'})
+            .stash('abc')
+        }).return(flare)
       })
   })
 })
