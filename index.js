@@ -23,6 +23,7 @@ function Flare(opts) {
 Flare.prototype = Object.create(Promise)
 
 Promise.route = classToInstanceFn('route')
+Promise.request = classToInstanceFn('request')
 Promise.get = classToInstanceFn('get')
 Promise.post = classToInstanceFn('post')
 Promise.put = classToInstanceFn('put')
@@ -84,6 +85,13 @@ Promise.prototype.docFile = function Promise$docFile(path) {
   return this._then(function () {
     flare.docFile = path
     return flare
+  })
+}
+
+Promise.prototype.flare = function Promise$flare(fn) {
+  var flare = this._boundTo
+  return this._then(function () {
+    return fn(flare)
   })
 }
 

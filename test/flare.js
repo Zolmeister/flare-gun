@@ -250,17 +250,24 @@ describe('Flare Gun', function () {
       })
   })
 
-  it('composes promises', function () {
+  it('flares', function () {
     return flare
-      .then(function (flare) {
-        return Promise.resolve('x').return(flare)
-      })
-      .then(function (flare) {
-        return Promise.map([1,2,3], function () {
+      .flare(function (flare) {
+
+        // create experiments
+        return Promise.map(Array(4), function (experiment) {
           return flare
-            .post('/mirror', {a: 'bc'})
-            .stash('abc')
-        }).return(flare)
+            .post('/experiments', experiment)
+        })
+      })
+      .flare(function (flare) {
+        return Promise.map(Array(4), function () {
+          return flare
+            .request({
+              uri: 'http://localhost:3001/authed',
+              method: 'get'
+            })
+        })
       })
   })
 })
