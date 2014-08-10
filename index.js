@@ -4,6 +4,7 @@ var _request = require('request')
 var Joi = require('joi')
 var fs = FlarePromise.promisifyAll(require('fs'))
 var _ = require('lodash')
+var http = require('http')
 
 module.exports = Flare
 
@@ -153,6 +154,20 @@ Flare.prototype.route = function (uri) {
     flare.path = uri
     return flare
   }).bind(flare)
+}
+
+Flare.prototype.express = function FlarePromise$express(app) {
+  var flare = this
+  return FlarePromise.resolve(new FlarePromise(function (resolve, reject) {
+    var server = http.Server(app)
+    server.listen(0, function(){
+      var host = server.address().address
+      var port = server.address().port
+
+      flare.path = 'http://' + host + ':' + port
+      resolve()
+    })
+  })).bind(flare)
 }
 
 Flare.prototype.get = function (uri) {

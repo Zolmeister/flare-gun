@@ -9,6 +9,7 @@ var restify = require('restify')
 var Joi = require('joi')
 var fs = require('fs')
 var _ = require('lodash')
+var express = require('express')
 
 describe('Flare Gun', function () {
   before(function (done) {
@@ -269,5 +270,15 @@ describe('Flare Gun', function () {
             })
         })
       })
+  })
+
+  it('binds express objects', function () {
+    var app = express()
+
+    app.use(function (req, res, next) {
+      res.end('hello')
+    })
+
+    return new Flare().express(app).get('/test').expect(200, 'hello')
   })
 })
