@@ -1,9 +1,14 @@
 /*globals describe, it, before*/
 'use strict'
 
+var ROOT = {
+  URL: 'http://localhost:3091',
+  PORT: 3091
+}
+
 var Promise = require('bluebird')
 var Flare = require('../')
-var flare = new Flare().route('http://localhost:3001')
+var flare = new Flare().route(ROOT.URL)
 var assert = require('assert')
 var restify = require('restify')
 var Joi = require('joi')
@@ -52,13 +57,13 @@ describe('Flare Gun', function () {
     server.put('/mirror', mirror)
     server.del('/mirror', mirror)
 
-    server.listen(3001, done)
+    server.listen(ROOT.PORT, done)
   })
 
   it('requests', function () {
     return flare
       .request({
-        uri: 'http://localhost:3001/hello/joe',
+        uri: ROOT.URL + '/hello/joe',
         method: 'get'
       })
       .then(function (flare) {
@@ -276,9 +281,24 @@ describe('Flare Gun', function () {
     var app = express()
 
     app.use(function (req, res, next) {
-      res.end('hello')
+      res.end('hello ' + req.url)
     })
 
-    return new Flare().express(app).get('/test').expect(200, 'hello')
+    return new Flare().express(app)
+      .get('/test')
+      .expect(200, 'hello /test')
   })
+
+  it('binds express objects with base path', function () {
+    var app = express()
+
+    app.use(function (req, res, next) {
+      res.end('hello ' + req.url)
+    })
+
+    return new Flare().express(app, '/base')
+      .get('/test')
+      .expect(200, 'hello /base/test')
+  })
+
 })

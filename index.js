@@ -156,7 +156,7 @@ Flare.prototype.route = function (uri) {
   }).bind(flare)
 }
 
-Flare.prototype.express = function FlarePromise$express(app) {
+Flare.prototype.express = function FlarePromise$express(app, base) {
   var flare = this
   return FlarePromise.resolve(new FlarePromise(function (resolve, reject) {
     var server = http.Server(app)
@@ -164,7 +164,7 @@ Flare.prototype.express = function FlarePromise$express(app) {
       var host = server.address().address
       var port = server.address().port
 
-      flare.path = 'http://' + host + ':' + port
+      flare.path = 'http://' + host + ':' + port + (base || '')
       resolve()
     })
   })).bind(flare)
