@@ -1,67 +1,125 @@
-# REST JSON API testing framework - using Promises
+# Flare Gun [![Build Status](https://drone.io/github.com/Zolmeister/flare-gun/status.png)](https://drone.io/github.com/Zolmeister/flare-gun/latest)
+
+### A JSON REST API testing framework
+
+## Install
+
+```sh
+$ npm install flare-gun
+```
+
+## Example, using mocha
+
+```sh
+$ npm install mocha Joi
+```
 
 ```js
-var flare = new require('flare-gun')().route('http://localhost:3001')
+var Joi = require('joi')
+var Flare = require('flare-gun')
 
-return flare
-  .request({
-    uri: 'http://localhost:3001/hello/joe',
-    method: 'get'
-  })
-  .get('/hello/joe')
-  .then(function (flare) {
-    assert(flare.res.body === '"hello joe"', 'Flare didn\'t get!')
-  })
-  .get('/NULL')
-  .expect(200)
-  .then(null, function (err) {
-    assert(err.message === 'Status Code: 404', 'Bad Error')
+var flare = new Flare().route('http://myapp.com/api')
+
+describe('MyApp', function () {
+  it('gets users', function () {
     return flare
+      .get('/users')
+      .expect(200, Joi.array().includes({
+        id: Joi.number(),
+        username: Joi.string().required(),
+        avatar: Joi.string()
+      }))
   })
-  .get('/NULL')
-  .expect(404)
-  .post('/mirror', { hello: 'world' })
-  .put('/mirror', {meta: 'eta'})
-  .del('/mirror', {meta: 'eta'})
-  .post('/mirror', {
-    err: 'none'
+
+  it('creates users', function () {
+    return flare
+      .post('/users', {username: 'joe'})
+      .expect(200)
+      .stash('joe')
+      .get('/users/:joe.id')
+      .expect(200, {
+        id: Joi.number(),
+        username: Joi.string().required(),
+        avatar: Joi.string()
+      })
   })
-  .expect(200, {
-    err: 'err' // Error generated
-  })
-  .post('/mirror', {
-    string: 'str',
-    num: 123,
-    nest: {
-      string: 'str',
-      num: 123
+})
+```
+
+## Usage
+
+##### `.request({String uri, String method})` -> `FlarePromise`
+
+##### `.get(String uri)` -> `FlarePromise`
+
+##### `.expect(String statusCode, Object|{Joi} response)` -> `FlarePromise`
+
+##### `.post(String uri, Object body)` -> `FlarePromise`
+
+##### `.put(String uri, Object body)` -> `FlarePromise`
+
+##### `.del(String uri, Object body)` -> `FlarePromise`
+
+##### `.stash(String name)` -> `FlarePromise`
+
+Stashed variables can be injected in any string, by prefixing with a `:`  
+e.g.
+
+```js
+flare
+  .post('/user')
+  .stash('joe')
+  .post('/users/:joe.id', {name: ':joe.name'})
+  .expect(200, {id: ':joe.id'})
+```
+
+##### `.actor(String name, Object requestObj)` -> `FlarePromise`
+
+requestObj gets combind with requests before being passed to [request.js](https://github.com/mikeal/request)
+
+##### `.as(String name)` -> `FlarePromise`
+
+```js
+flare
+  .actor('joe', {
+    auth: {
+      user: 'joe',
+      pass: 'joePass'
     }
   })
-  // See Joi - https://github.com/spumko/joi
-  .expect(200, {
-    string: Joi.string(),
-    num: Joi.number(),
-    nest: Joi.object().keys({
-        string: Joi.string(),
-        num: Joi.number()
-    })
+  .actor('anon', {})
+  .as('joe')
+  .get('/asJoe')
+  .as('anon')
+  .get('/asAnon')
+```
+
+##### `.flare(Function handler(flare))` -> `FlarePromise`
+
+Multiple requests in parallel
+
+```js
+.flare(function (flare) {
+
+  // create experiments
+  return Promise.map(Array(4), function (experiment) {
+    return flare
+      .post('/experiments', {id: 23})
   })
-  .post('/mirror', {text: 'boom', friend: 'mob'})
-  .stash('mirror')
-  .get('/hello/:mirror.text/:mirror.friend')
-  .post('/mirror', {text: 'boom'})
-  .stash('mirror')
-  .post('/mirror', {text: ':mirror.text'})
-  .expect(200, {
-    text: Joi.string('boom').required()
-  })
-  // auto doc generation via ze-goggles
-  // https://github.com/Zolmeister/ze-goggles
-  .docFile(__dirname + '/flare_doc.json')
-  .post('/mirror', {my: 'me'})
-  .expect(200, {
-    my: Joi.string()
-  })
-  .doc('Hello', 'Say hello to the mirror')
-  .doc('Delete', 'No errors here')
+})
+```
+
+##### `.route(String url)` -> `FlarePromise`
+
+Set the base url for requests
+
+##### `.express({Express} app)` -> `FlarePromise`
+
+Pass in an express server object to make calls to, instead of a url
+
+
+## Contributing
+
+```sh
+$ npm test
 ```
