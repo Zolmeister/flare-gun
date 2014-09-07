@@ -193,6 +193,16 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('stashes with Joi objects', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .post('/mirror', {text: ':mirror.text'})
+      .expect(200, Joi.object().required().keys({
+        text: ':mirror.text'
+      }))
+  })
+
   it('docs', function () {
     return flare
       .docFile(__dirname + '/flare_doc.json')
@@ -270,7 +280,7 @@ describe('Flare Gun', function () {
         return Promise.map(Array(4), function () {
           return flare
             .request({
-              uri: 'http://localhost:3001/authed',
+              uri: ROOT.URL + '/authed',
               method: 'get'
             })
         })

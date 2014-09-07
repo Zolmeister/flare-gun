@@ -112,13 +112,25 @@ Flare.prototype.doc = function FlarePromise$doc(title, description) {
 
 function fillJson(json, source) {
   _.forEach(json, function (val, key) {
-    if (_.isPlainObject(val)) {
+
+    // The extra checks are for `Joi` objects, and may break if Joi changes
+    if (_.isPlainObject(val) || val && val.isJoi || val && val._set) {
       return fillJson(val, source)
+    } else if (_.isArray(val)) {
+
+      return json[key] = _.map(val, function (obj) {
+        if (typeof obj === 'string' && /^:[\w.]+$/.test(val)) {
+          return fillString(obj, source)
+        }
+
+        return fillJson(obj, source)
+      })
     }
 
     if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
       json[key] = fillString(val, source)
     }
+
   })
 
   return json
