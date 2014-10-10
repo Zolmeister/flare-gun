@@ -67,7 +67,7 @@ describe('Flare Gun', function () {
         method: 'get'
       })
       .then(function (flare) {
-        assert(flare.res.body === '"hello joe"', 'Flare didn\'t get!')
+        assert(flare.res.body === 'hello joe', 'Flare didn\'t get!')
       })
   })
 
@@ -75,7 +75,7 @@ describe('Flare Gun', function () {
     return flare
       .get('/hello/joe')
       .then(function (flare) {
-        assert(flare.res.body === '"hello joe"', 'Flare didn\'t get!')
+        assert(flare.res.body === 'hello joe', 'Flare didn\'t get!')
       })
   })
 
@@ -149,6 +149,23 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('expects default joi schema to required mode checking', function () {
+    return flare
+      .post('/mirror', {
+        a: 'abc'
+      })
+      .expect(200, Joi.object().keys({
+        a: 'abc',
+        b: Joi.string()
+      }))
+      .then(function () {
+        throw 'Did not catch invalid'
+      }, function (err) {
+        assert(err.message.length > 0)
+        return flare
+      })
+  })
+
   it('expects support schema with stash', function () {
     return flare
       .post('/mirror', {
@@ -170,16 +187,16 @@ describe('Flare Gun', function () {
 
   it('stashes', function () {
     return flare
-      .post('/mirror', {text: 'boom', friend: 'mob'})
+      .post('/mirror', {text: 'boom', nestor: { nested: 'nes'}})
       .stash('mirror')
-      .get('/hello/:mirror.text/:mirror.friend')
+      .get('/hello/:mirror.text/:mirror.nestor.nested')
       .expect(200, function (res) {
-        assert(res.body === '"hello boom from mob"')
+        assert(res.body === 'hello boom from nes')
       })
-      .post('/mirror', {text: ':mirror.boom', friend: ':mirror.mob'})
+      .post('/mirror', {text: ':mirror.text', nes: ':mirror.nestor.nested'})
       .expect(200, {
         text: 'boom',
-        friend: 'mob'
+        nes: 'nes'
       })
   })
 

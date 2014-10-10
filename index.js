@@ -25,7 +25,7 @@ function fillUri(uri, source) {
   var vars = uri.match(/\/:[\w.]+/g)
   if (vars) {
     for (var i = 0; i < vars.length; i++) {
-      uri = uri.replace(vars[i], '/' + fillString(vars[i], source))
+      uri = uri.replace(vars[i], '/' + fillString(vars[i].slice(1), source))
     }
   }
 
@@ -33,11 +33,9 @@ function fillUri(uri, source) {
 }
 
 function fillString(param, source) {
-  var name = param
-  name = name.slice(name.indexOf(':') + 1, name.indexOf('.'))
+  var name = param.slice(param.indexOf(':') + 1, param.indexOf('.'))
 
   var pointer = source[name]
-
 
   var params = param.match(/\.\w+/g)
   for (var j = 0; j < params.length; j++) {
@@ -45,6 +43,35 @@ function fillString(param, source) {
   }
 
   return pointer
+}
+
+function fillJson(json, source) {
+  _.forEach(json, function (val, key) {
+
+    // The extra checks are for `Joi` objects, and may break if Joi changes
+    var isJoiObj = _.isObject(val) && val.isJoi || _.isObject(val) && val._set
+    if (_.isPlainObject(val) || isJoiObj) {
+      return fillJson(val, source)
+    }
+
+    if (_.isArray(val)) {
+
+      return json[key] = _.map(val, function (obj) {
+        if (typeof obj === 'string' && /^:[\w.]+$/.test(val)) {
+          return fillString(obj, source)
+        }
+
+        return fillJson(obj, source)
+      })
+    }
+
+    if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
+      json[key] = fillString(val, source)
+    }
+
+  })
+
+  return json
 }
 
 Flare.prototype.actor = function (name, req) {
@@ -110,32 +137,6 @@ Flare.prototype.doc = function FlarePromise$doc(title, description) {
   }).bind(flare)
 }
 
-function fillJson(json, source) {
-  _.forEach(json, function (val, key) {
-
-    // The extra checks are for `Joi` objects, and may break if Joi changes
-    if (_.isPlainObject(val) || val && val.isJoi || val && val._set) {
-      return fillJson(val, source)
-    } else if (_.isArray(val)) {
-
-      return json[key] = _.map(val, function (obj) {
-        if (typeof obj === 'string' && /^:[\w.]+$/.test(val)) {
-          return fillString(obj, source)
-        }
-
-        return fillJson(obj, source)
-      })
-    }
-
-    if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
-      json[key] = fillString(val, source)
-    }
-
-  })
-
-  return json
-}
-
 Flare.prototype.request = function (opts) {
   var flare = this
   return FlarePromise.try(function () {
@@ -143,7 +144,9 @@ Flare.prototype.request = function (opts) {
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stashed)
     opts.json = opts.json && fillJson(opts.json, flare.stashed)
-    flare.req = _.defaults(opts, flare.currentActor)
+    flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
+      json: true
+    })
 
     return new FlarePromise(function (resolve, reject) {
       _request(opts, function (err, res) {
@@ -258,7 +261,10 @@ Flare.prototype.expect = function (statusCode, schema) {
         }
       }
 
-      Joi.validate(flare.res.body, flare.schema, function (err) {
+      Joi.validate(flare.res.body, flare.schema, {
+        convert: false,
+        presence: 'required'
+      }, function (err) {
         if (err) {
           return reject(err)
         }

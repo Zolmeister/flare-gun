@@ -14,6 +14,15 @@ $ npm install flare-gun
 $ npm install mocha Joi
 ```
 
+Default config for Joi validation:
+
+```js
+{
+  convert: false,
+  presence: 'required'
+}
+```
+
 ```js
 var Joi = require('joi')
 var Flare = require('flare-gun')

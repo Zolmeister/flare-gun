@@ -1,6 +1,6 @@
 {
   "name": "flare-gun",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "description": "REST API endpoint testing library",
   "keywords": [
     "testing",
@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Zolmeister/flare-gun",
   "dependencies": {
     "bluebird": "2.0.7",
-    "joi": "4.6.0",
+    "joi": "4.7.0",
     "lodash": "2.4.1",
     "request": "2.36.0"
   },
