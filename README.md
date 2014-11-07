@@ -59,7 +59,7 @@ describe('MyApp', function () {
 
 ##### `.request({String uri, String method})` -> `FlarePromise`
 
-##### `.get(String uri)` -> `FlarePromise`
+##### `.get(String uri, Object queryString)` -> `FlarePromise`
 
 ##### `.expect(String statusCode, Object|{Joi} response)` -> `FlarePromise`
 
