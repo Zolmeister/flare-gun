@@ -144,6 +144,7 @@ Flare.prototype.request = function (opts) {
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stashed)
     opts.json = opts.json && fillJson(opts.json, flare.stashed)
+    opts.followRedirect = false
     flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
       json: true
     })
