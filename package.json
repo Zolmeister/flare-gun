@@ -1,6 +1,6 @@
 {
   "name": "flare-gun",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "REST API endpoint testing library",
   "keywords": [
     "testing",
@@ -29,8 +29,9 @@
     "request": "2.36.0"
   },
   "devDependencies": {
+    "basic-auth": "1.0.0",
+    "body-parser": "1.9.2",
     "express": "4.8.2",
-    "mocha": "1.20.1",
-    "restify": "2.8.1"
+    "mocha": "1.20.1"
   }
 }

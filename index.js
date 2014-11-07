@@ -185,13 +185,14 @@ Flare.prototype.express = function FlarePromise$express(app, base) {
   })).bind(flare)
 }
 
-Flare.prototype.get = function (uri) {
+Flare.prototype.get = function (uri, queryString) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
     return self.request({
       method: 'get',
-      uri: flare.path + uri
+      uri: flare.path + uri,
+      qs: queryString
     })
   }).bind(flare)
 }

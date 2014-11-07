@@ -10,11 +10,12 @@ var Promise = require('bluebird')
 var Flare = require('../')
 var flare = new Flare().route(ROOT.URL)
 var assert = require('assert')
-var restify = require('restify')
 var Joi = require('joi')
 var fs = require('fs')
 var _ = require('lodash')
 var express = require('express')
+var bodyParser = require('body-parser')
+var basicAuth = require('basic-auth')
 
 describe('Flare Gun', function () {
   before(function (done) {
@@ -29,9 +30,13 @@ describe('Flare Gun', function () {
       next()
     }
 
-    var server = restify.createServer()
-    server.use(restify.bodyParser({ mapParams: false }))
-    server.use(restify.authorizationParser())
+    function mirrorQuery(req, res, next) {
+      res.json(req.query)
+      next()
+    }
+
+    var server = express()
+    server.use(bodyParser.json())
 
     server.get('/hello/:name', respond)
     server.get('/hello/:name/:friend', function (req, res, next) {
@@ -40,22 +45,26 @@ describe('Flare Gun', function () {
     })
 
     server.get('/authed', function (req, res) {
-      if (!req.authorization || !req.authorization.basic) {
-        return res.send(401)
+      var user = basicAuth(req)
+      if (!user || !user.name || !user.pass) {
+        return res.status(401).end()
       }
-      var user = req.authorization.basic.username
-      var pass = req.authorization.basic.password
 
       res.json({
-        user: user,
-        pass: pass
+        user: user.name,
+        pass: user.pass
       })
     })
 
     server.get('/mirror', mirror)
     server.post('/mirror', mirror)
     server.put('/mirror', mirror)
-    server.del('/mirror', mirror)
+    server.delete('/mirror', mirror)
+
+    server.get('/mirrorQuery', mirrorQuery)
+    server.post('/mirrorQuery', mirrorQuery)
+    server.put('/mirrorQuery', mirrorQuery)
+    server.delete('/mirrorQuery', mirrorQuery)
 
     server.listen(ROOT.PORT, done)
   })
@@ -76,6 +85,14 @@ describe('Flare Gun', function () {
       .get('/hello/joe')
       .then(function (flare) {
         assert(flare.res.body === 'hello joe', 'Flare didn\'t get!')
+      })
+  })
+
+  it('gets with query params', function () {
+    return flare
+      .get('/mirrorQuery', {hello: 'world'})
+      .then(function (flare) {
+        assert(flare.res.body.hello === 'world')
       })
   })
 
