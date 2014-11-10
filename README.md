@@ -67,6 +67,8 @@ describe('MyApp', function () {
 
 ##### `.put(String uri, Object body)` -> `FlarePromise`
 
+##### `.patch(String uri, Object body)` -> `FlarePromise`
+
 ##### `.del(String uri, Object body)` -> `FlarePromise`
 
 ##### `.stash(String name)` -> `FlarePromise`

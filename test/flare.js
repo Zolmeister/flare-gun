@@ -59,6 +59,7 @@ describe('Flare Gun', function () {
     server.get('/mirror', mirror)
     server.post('/mirror', mirror)
     server.put('/mirror', mirror)
+    server.patch('/mirror', mirror)
     server.delete('/mirror', mirror)
 
     server.get('/mirrorQuery', mirrorQuery)
@@ -123,6 +124,14 @@ describe('Flare Gun', function () {
       .put('/mirror', {meta: 'eta'})
       .then(function (flare) {
         assert(flare.res.body.meta === 'eta', 'Flare didn\'t put!')
+      })
+  })
+
+  it('patches', function () {
+    return flare
+      .patch('/mirror', {meta: 'eta'})
+      .then(function (flare) {
+        assert(flare.res.body.meta === 'eta', 'Flare didn\'t patch!')
       })
   })
 
@@ -267,6 +276,11 @@ describe('Flare Gun', function () {
         re: Joi.string()
       })
       .doc('Hello', 'Reflect joe')
+      .patch('/mirror', {re: 'flect'})
+      .expect(200, {
+        re: Joi.string()
+      })
+      .doc('Hello', 'Patch joe')
       .get('/404')
       .expect(404)
       .doc('Errors', '404 error!!!!!!')

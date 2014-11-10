@@ -222,6 +222,18 @@ Flare.prototype.put = function (uri, body) {
   }).bind(flare)
 }
 
+Flare.prototype.patch = function (uri, body) {
+  var self = this
+  var flare = this
+  return FlarePromise.try(function () {
+    return self.request({
+      method: 'patch',
+      uri: flare.path + uri,
+      json: body
+    })
+  }).bind(flare)
+}
+
 Flare.prototype.del = function (uri, body) {
   var self = this
   var flare = this
