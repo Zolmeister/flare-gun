@@ -201,14 +201,32 @@ describe('Flare Gun', function () {
       .expect(200, {
         string: ':joe.string'
       })
-      .post('/mirror', [
-        {
+      .post('/mirror', [{
           a: 'b'
-        }
-      ])
+        }]
+      )
       .expect(200, Joi.array().includes({
         a: 'b'
       }))
+  })
+
+  it('expects support schema with top-level stash', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .post('/mirror', {text:'boom'})
+      .expect(200, ':mirror')
+  })
+
+  it('expects supports callback parameter', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .get('/hello/joe')
+      .expect(200, function (res, stashed) {
+        assert(res.body === 'hello joe')
+        assert(stashed.mirror.text === 'boom' )
+      })
   })
 
   it('stashes', function () {
@@ -219,8 +237,19 @@ describe('Flare Gun', function () {
       .expect(200, function (res) {
         assert(res.body === 'hello boom from nes')
       })
-      .post('/mirror', {text: ':mirror.text', nes: ':mirror.nestor.nested'})
+      .get('/hello/bob/joe')
+      .stash('mirrorString')
+      .get('/hello/:mirror.text/:mirrorString')
+      .expect(200, function (res) {
+        assert(res.body === 'hello boom from hello bob from joe')
+      })
+      .post('/mirror', {
+        top: ':mirrorString',
+        text: ':mirror.text',
+        nes: ':mirror.nestor.nested'
+      })
       .expect(200, {
+        top: 'hello bob from joe',
         text: 'boom',
         nes: 'nes'
       })
@@ -232,7 +261,7 @@ describe('Flare Gun', function () {
       .stash('mirror')
       .post('/mirror', {text: ':mirror.text'})
       .expect(200, {
-        text: Joi.string('boom').required()
+        text: 'boom'
       })
   })
 
@@ -244,6 +273,14 @@ describe('Flare Gun', function () {
       .expect(200, Joi.object().required().keys({
         text: ':mirror.text'
       }))
+  })
+
+  it('retrieves stash for top-level objects', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .post('/mirror', ':mirror')
+      .expect(200, {text: 'boom'})
   })
 
   it('docs', function () {

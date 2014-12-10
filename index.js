@@ -33,11 +33,16 @@ function fillUri(uri, source) {
 }
 
 function fillString(param, source) {
-  var name = param.slice(param.indexOf(':') + 1, param.indexOf('.'))
+  var name = param.slice(param.indexOf(':') + 1).split('.')[0]
 
   var pointer = source[name]
 
   var params = param.match(/\.\w+/g)
+
+  if (params === null) {
+    return pointer
+  }
+
   for (var j = 0; j < params.length; j++) {
     pointer = pointer[params[j].slice(1)]
   }
@@ -143,6 +148,9 @@ Flare.prototype.request = function (opts) {
 
     // materialize the stash
     opts.uri = fillUri(opts.uri, flare.stashed)
+    if (typeof opts.json === 'string' && /^:[\w.]+$/.test(opts.json)) {
+      opts.json = fillString(opts.json, flare.stashed)
+    }
     opts.json = opts.json && fillJson(opts.json, flare.stashed)
     opts.followRedirect = false
     flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
@@ -250,7 +258,12 @@ Flare.prototype.expect = function (statusCode, schema) {
   var flare = this
   return FlarePromise.try(function () {
 
-    flare.schema = fillJson(schema, flare.stashed)
+    if (typeof schema === 'string' && /^:[\w.]+$/.test(schema)) {
+      flare.schema = fillString(schema, flare.stashed)
+    }
+    else {
+      flare.schema = fillJson(schema, flare.stashed)
+    }
     return new FlarePromise(function (resolve, reject) {
       var status = flare.res.statusCode
 
@@ -268,13 +281,12 @@ Flare.prototype.expect = function (statusCode, schema) {
 
       if (typeof schema === 'function') {
         try {
-          schema(flare.res)
+          schema(flare.res, flare.stashed)
           return resolve(flare)
         } catch(err) {
           return reject(err)
         }
       }
-
       Joi.validate(flare.res.body, flare.schema, {
         convert: false,
         presence: 'required'
