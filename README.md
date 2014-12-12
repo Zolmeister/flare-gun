@@ -82,6 +82,14 @@ flare
   .stash('joe')
   .post('/users/:joe.id', {name: ':joe.name'})
   .expect(200, {id: ':joe.id'})
+  .post('/users/:joe.id', {name: ':joe.name'})
+  .expect(200, Joi.object().keys({
+    id: ':joi.id'
+  }))
+  .post('/users/friends', ':joe')
+  .expect(200, ':joe.id')
+  .get('/users/:joe.id')
+  .expect(200, ':joe')
 ```
 
 ##### `.actor(String name, Object requestObj)` -> `FlarePromise`
