@@ -21,22 +21,24 @@ function Flare(opts) {
   this._isFlare = true
 }
 
-function fillUri(uri, source) {
-  var vars = uri.match(/\/:[\w.]+/g)
-  if (vars) {
-    for (var i = 0; i < vars.length; i++) {
-      uri = uri.replace(vars[i], '/' + fillString(vars[i].slice(1), source))
-    }
-  }
+function unstash(obj, stash) {
+  if (!obj) return obj
 
-  return uri
+  if (_.isString(obj)) {
+    return unstashString(obj, stash)
+  }
+  return unstashObject(obj, stash)
 }
 
-function fillString(param, source) {
+function unstashString(param, stash) {
+  if (!/^:[a-zA-Z][\w.]+$/.test(param)) {
+    return param.replace(/:[a-zA-Z][\w.]+/g, function (param) {
+      return unstashString(param, stash)
+    })
+  }
+
   var name = param.slice(param.indexOf(':') + 1).split('.')[0]
-
-  var pointer = source[name]
-
+  var pointer = stash[name]
   var params = param.match(/\.\w+/g)
 
   if (params === null) {
@@ -50,33 +52,23 @@ function fillString(param, source) {
   return pointer
 }
 
-function fillJson(json, source) {
-  _.forEach(json, function (val, key) {
+function isJoiObj(val) {
+  // may break if Joi changes
+  return _.isObject(val) && val.isJoi || _.isObject(val) && val._set
+}
 
-    // The extra checks are for `Joi` objects, and may break if Joi changes
-    var isJoiObj = _.isObject(val) && val.isJoi || _.isObject(val) && val._set
-    if (_.isPlainObject(val) || isJoiObj) {
-      return fillJson(val, source)
+function unstashObject(obj, stash) {
+  return _.transform(obj, function (result, val, key) {
+    if (_.isPlainObject(val) ||
+        _.isString(val) ||
+        _.isArray(val) ||
+        isJoiObj(val)) {
+      result[key] = unstash(val, stash)
+    } else {
+      result[key] = val
     }
-
-    if (_.isArray(val)) {
-
-      return json[key] = _.map(val, function (obj) {
-        if (typeof obj === 'string' && /^:[\w.]+$/.test(val)) {
-          return fillString(obj, source)
-        }
-
-        return fillJson(obj, source)
-      })
-    }
-
-    if (typeof val === 'string' && /^:[\w.]+$/.test(val)) {
-      json[key] = fillString(val, source)
-    }
-
+    return result
   })
-
-  return json
 }
 
 Flare.prototype.actor = function (name, req) {
@@ -147,15 +139,9 @@ Flare.prototype.request = function (opts) {
   return FlarePromise.try(function () {
 
     // materialize the stash
-    opts.uri = fillUri(opts.uri, flare.stashed)
-    if (typeof opts.json === 'string' && /^:[\w.]+$/.test(opts.json)) {
-      opts.json = fillString(opts.json, flare.stashed)
-    }
-    opts.json = opts.json && fillJson(opts.json, flare.stashed)
-    if (typeof opts.qs === 'string' && /^:[\w.]+$/.test(opts.qs)) {
-      opts.qs = fillString(opts.qs, flare.stashed)
-    }
-    opts.qs = opts.qs && fillJson(opts.qs, flare.stashed)
+    opts.uri = unstash(opts.uri, flare.stashed)
+    opts.json = unstash(opts.json, flare.stashed)
+    opts.qs = unstash(opts.qs, flare.stashed)
     opts.followRedirect = false
     flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
       json: true
@@ -262,12 +248,7 @@ Flare.prototype.expect = function (statusCode, schema) {
   var flare = this
   return FlarePromise.try(function () {
 
-    if (typeof schema === 'string' && /^:[\w.]+$/.test(schema)) {
-      flare.schema = fillString(schema, flare.stashed)
-    }
-    else {
-      flare.schema = fillJson(schema, flare.stashed)
-    }
+    flare.schema = unstash(schema, flare.stashed)
     return new FlarePromise(function (resolve, reject) {
       var status = flare.res.statusCode
 
