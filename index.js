@@ -152,6 +152,10 @@ Flare.prototype.request = function (opts) {
       opts.json = fillString(opts.json, flare.stashed)
     }
     opts.json = opts.json && fillJson(opts.json, flare.stashed)
+    if (typeof opts.qs === 'string' && /^:[\w.]+$/.test(opts.qs)) {
+      opts.qs = fillString(opts.qs, flare.stashed)
+    }
+    opts.qs = opts.qs && fillJson(opts.qs, flare.stashed)
     opts.followRedirect = false
     flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
       json: true

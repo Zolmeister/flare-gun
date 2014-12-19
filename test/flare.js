@@ -283,6 +283,26 @@ describe('Flare Gun', function () {
       .expect(200, {text: 'boom'})
   })
 
+  it('retrieves stash for GET query string params', function () {
+    return flare
+        .get('/mirrorQuery', {hello: 'world'})
+        .stash('hello')
+        .get('/mirrorQuery', {hello: ':hello.hello'})
+        .then(function (flare) {
+          assert(flare.res.body.hello === 'world')
+        })
+  })
+
+  it('retrieves stash for top level GET query string params', function () {
+    return flare
+        .get('/mirrorQuery', {hello: 'world'})
+        .stash('hello')
+        .get('/mirrorQuery', ':hello')
+        .then(function (flare) {
+          assert(flare.res.body.hello === 'world')
+        })
+  })
+
   it('docs', function () {
     return flare
       .docFile(__dirname + '/flare_doc.json')
