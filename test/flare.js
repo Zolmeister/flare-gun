@@ -97,6 +97,14 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('gets with opts', function () {
+    return flare
+      .get('/mirrorQuery', null, {qs: {hello: 'world'}})
+      .then(function (flare) {
+        assert(flare.res.body.hello === 'world')
+      })
+  })
+
   it('expects status codes', function () {
     return flare
       .get('/NULL')
@@ -119,9 +127,25 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('posts with opts', function () {
+    return flare
+      .post('/mirror', null, {json: { hello: 'world' }})
+      .then(function (flare) {
+        assert(flare.res.body.hello === 'world', 'Flare didn\'t post!')
+      })
+  })
+
   it('puts', function () {
     return flare
       .put('/mirror', {meta: 'eta'})
+      .then(function (flare) {
+        assert(flare.res.body.meta === 'eta', 'Flare didn\'t put!')
+      })
+  })
+
+  it('puts with opts', function () {
+    return flare
+      .put('/mirror', null, {json: {meta: 'eta'}})
       .then(function (flare) {
         assert(flare.res.body.meta === 'eta', 'Flare didn\'t put!')
       })
@@ -135,9 +159,25 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('patches with opts', function () {
+    return flare
+      .patch('/mirror', null, {json: {meta: 'eta'}})
+      .then(function (flare) {
+        assert(flare.res.body.meta === 'eta', 'Flare didn\'t patch!')
+      })
+  })
+
   it('deletes', function () {
     return flare
       .del('/mirror', {meta: 'eta'})
+      .then(function (flare) {
+        assert(flare.res.body.meta === 'eta', 'Flare didn\'t delete!')
+      })
+  })
+
+  it('deletes with opts', function () {
+    return flare
+      .del('/mirror', null, {json: {meta: 'eta'}})
       .then(function (flare) {
         assert(flare.res.body.meta === 'eta', 'Flare didn\'t delete!')
       })

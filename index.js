@@ -184,63 +184,63 @@ Flare.prototype.express = function FlarePromise$express(app, base) {
   })).bind(flare)
 }
 
-Flare.prototype.get = function (uri, queryString) {
+Flare.prototype.get = function (uri, queryString, opts) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
-    return self.request({
+    return self.request(_.defaults(opts || {}, {
       method: 'get',
       uri: flare.path + uri,
       qs: queryString
-    })
+    }))
   }).bind(flare)
 }
 
-Flare.prototype.post = function (uri, body) {
+Flare.prototype.post = function (uri, body, opts) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
-    return self.request({
+    return self.request(_.defaults(opts || {},{
       method: 'post',
       uri: flare.path + uri,
       json: body
-    })
+    }))
   }).bind(flare)
 }
 
-Flare.prototype.put = function (uri, body) {
+Flare.prototype.put = function (uri, body, opts) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
-    return self.request({
+    return self.request(_.defaults(opts || {}, {
       method: 'put',
       uri: flare.path + uri,
       json: body
-    })
+    }))
   }).bind(flare)
 }
 
-Flare.prototype.patch = function (uri, body) {
+Flare.prototype.patch = function (uri, body, opts) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
-    return self.request({
+    return self.request(_.defaults(opts || {},{
       method: 'patch',
       uri: flare.path + uri,
       json: body
-    })
+    }))
   }).bind(flare)
 }
 
-Flare.prototype.del = function (uri, body) {
+Flare.prototype.del = function (uri, body, opts) {
   var self = this
   var flare = this
   return FlarePromise.try(function () {
-    return self.request({
+    return self.request(_.defaults(opts || {}, {
       method: 'delete',
       uri: flare.path + uri,
       json: body
-    })
+    }))
   }).bind(flare)
 }
 

@@ -59,20 +59,21 @@ describe('MyApp', function () {
 
 ##### `.request({String uri, String method})` -> `FlarePromise`
 
-##### `.get(String uri, Object queryString)` -> `FlarePromise`
+##### `.get(String uri, Object queryString, Object options)` -> `FlarePromise`
 
 ##### `.expect(String statusCode, Object|{Joi} response)` -> `FlarePromise`
 
-##### `.post(String uri, Object body)` -> `FlarePromise`
+##### `.post(String uri, Object body, Object options)` -> `FlarePromise`
 
-##### `.put(String uri, Object body)` -> `FlarePromise`
+##### `.put(String uri, Object body, Object options)` -> `FlarePromise`
 
-##### `.patch(String uri, Object body)` -> `FlarePromise`
+##### `.patch(String uri, Object body, Object options)` -> `FlarePromise`
 
-##### `.del(String uri, Object body)` -> `FlarePromise`
+##### `.del(String uri, Object body, Object options)` -> `FlarePromise`
 
 ##### `.stash(String name)` -> `FlarePromise`
 
+Options are passed through to [request](https://github.com/request/request)
 Stashed variables can be injected in any string, by prefixing with a `:`  
 e.g.
 
