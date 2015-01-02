@@ -110,7 +110,7 @@ describe('Flare Gun', function () {
       .get('/NULL')
       .expect(200)
       .then(null, function (err) {
-        assert(err.message === 'Status Code: 404', 'Bad Error')
+        assert(err.message === 'Status code should be 200, not 404', 'Bad Error')
         return flare
       })
       .get('/NULL')

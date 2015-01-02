@@ -253,7 +253,9 @@ Flare.prototype.expect = function (statusCode, schema) {
       var status = flare.res.statusCode
 
       if (typeof status === 'number' && status !== statusCode) {
-        return reject(new Error('Status Code: ' + status))
+        var message = 'Status code should be ' + statusCode +
+                      ', not ' + status
+        return reject(new Error(message))
       }
 
       if (typeof status === 'function') {
@@ -277,6 +279,8 @@ Flare.prototype.expect = function (statusCode, schema) {
         presence: 'required'
       }, function (err) {
         if (err) {
+          err.message += '\n    at ' +
+            JSON.stringify(flare.res.body, null, 2).replace(/\n/g,'\n    at ')
           return reject(err)
         }
 
