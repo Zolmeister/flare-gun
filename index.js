@@ -255,6 +255,8 @@ Flare.prototype.expect = function (statusCode, schema) {
       if (typeof status === 'number' && status !== statusCode) {
         var message = 'Status code should be ' + statusCode +
                       ', not ' + status
+        message += '\n    at ' +
+          JSON.stringify(flare.res.body, null, 2).replace(/\n/g,'\n    at ')
         return reject(new Error(message))
       }
 
