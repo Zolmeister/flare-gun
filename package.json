@@ -23,15 +23,15 @@
   },
   "homepage": "https://github.com/Zolmeister/flare-gun",
   "dependencies": {
-    "bluebird": "2.0.7",
-    "joi": "4.7.0",
-    "lodash": "2.4.1",
-    "request": "2.51.0"
+    "bluebird": "^2.9.14",
+    "joi": "^6.0.8",
+    "lodash": "^3.6.0",
+    "request": "^2.54.0"
   },
   "devDependencies": {
-    "basic-auth": "1.0.0",
-    "body-parser": "1.9.2",
-    "express": "4.8.2",
-    "mocha": "1.20.1"
+    "basic-auth": "^1.0.0",
+    "body-parser": "^1.12.2",
+    "express": "^4.12.3",
+    "mocha": "^2.2.1"
   }
 }

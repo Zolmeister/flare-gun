@@ -110,7 +110,10 @@ describe('Flare Gun', function () {
       .get('/NULL')
       .expect(200)
       .then(null, function (err) {
-        assert(err.message === 'Status code should be 200, not 404', 'Bad Error')
+        assert(
+          _.includes(err.message, 'Status code should be 200, not 404'),
+          'Bad Error'
+        )
         return flare
       })
       .get('/NULL')
@@ -245,7 +248,7 @@ describe('Flare Gun', function () {
           a: 'b'
         }]
       )
-      .expect(200, Joi.array().includes({
+      .expect(200, Joi.array().items({
         a: 'b'
       }))
   })
