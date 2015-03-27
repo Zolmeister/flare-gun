@@ -459,4 +459,20 @@ describe('Flare Gun', function () {
       .expect(200, 'hello /base/test')
   })
 
+  it('binds express objects wrapped in promises', function () {
+    var app = express()
+
+    var appPromise = new Promise(function (resolve) {
+      resolve(app)
+    })
+
+    app.use(function (req, res, next) {
+      res.end('hello ' + req.url)
+    })
+
+    return new Flare().express(appPromise)
+      .get('/test')
+      .expect(200, 'hello /test')
+  })
+
 })
