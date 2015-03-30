@@ -6,19 +6,17 @@ var fs = FlarePromise.promisifyAll(require('fs'))
 var _ = require('lodash')
 var http = require('http')
 
-module.exports = Flare
+var flareGun = new FlarePromise(function (resolve) {
+  resolve({
+    path: '',
+    stash: {},
+    res: {},
+    currentActorName: null,
+    actors: {}
+  })
+})
 
-function Flare(opts) {
-  opts = opts || {}
-  this.path = opts.path || ''
-  this.stashed = opts.stashed || {}
-  this.res = opts.res || {}
-  this.schema = opts.schema || {}
-  this.req = opts.res || {}
-  this.actors = opts.actors || {}
-  this.currentActor = opts.currentActor || {}
-  this._isFlare = true
-}
+module.exports = flareGun
 
 function unstash(obj, stash) {
   if (!obj) return obj
@@ -70,41 +68,23 @@ function unstashObject(obj, stash) {
   })
 }
 
-Flare.prototype.actor = function (name, req) {
-  var flare = this
-  return FlarePromise.try(function () {
-    flare.actors[name] = req || {}
-    return flare
-  }).bind(flare)
-}
-
-Flare.prototype.as = function (name) {
-  var flare = this
-  return FlarePromise.try(function () {
-    flare.currentActor = flare.actors[name]
-    return flare
-  }).bind(flare)
-}
-
-Flare.prototype.flare = function FlarePromise$flare(fn) {
-  var flare = this
-  return FlarePromise.try(function () {
-    return fn(flare)
-  }).bind(flare)
-}
-
-Flare.prototype.request = function (opts) {
-  var flare = this
-  return FlarePromise.try(function () {
-
-    // materialize the stash
-    opts.uri = unstash(opts.uri, flare.stashed)
-    opts.json = unstash(opts.json, flare.stashed)
-    opts.qs = unstash(opts.qs, flare.stashed)
-    opts.followRedirect = false
-    flare.req = _.defaults(_.defaults(opts, flare.currentActor), {
-      json: true
+FlarePromise.prototype.flare = function FlarePromise$flare(fn) {
+  var self = this
+  return this.then(function (flare) {
+    FlarePromise.try(function () {
+      return fn(self, flare)
     })
+  })
+}
+
+FlarePromise.prototype.request = function (opts) {
+  return this.then(function (flare) {
+    // materialize the stash
+    opts.uri = unstash(opts.uri, flare.stash)
+    opts.json = unstash(opts.json, flare.stash)
+    opts.qs = unstash(opts.qs, flare.stash)
+    opts.followRedirect = false
+    opts = _.defaults(flare.actors[flare.currentActorName] || {}, opts)
 
     return new FlarePromise(function (resolve, reject) {
       _request(opts, function (err, res) {
@@ -115,103 +95,120 @@ Flare.prototype.request = function (opts) {
         resolve(res)
       })
     }).then(function (res) {
-      flare.res = _.pick(res, ['statusCode', 'headers', 'body'])
-      return flare
+      return _.defaults({
+        res: _.pick(res, ['statusCode', 'headers', 'body'])
+      }, flare)
     })
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.route = function (uri) {
-  var flare = this
-  return FlarePromise.try(function () {
-    flare.path = uri
-    return flare
-  }).bind(flare)
+FlarePromise.prototype.route = function (uri) {
+  return this.then(function (flare) {
+    return _.defaults({path: uri}, flare)
+  })
 }
 
-Flare.prototype.express = function FlarePromise$express(app, base) {
-  var flare = this
-  return FlarePromise.resolve(app).then(function (app) {
-    return new FlarePromise(function (resolve, reject) {
-      var server = http.Server(app)
-      server.listen(0, function(){
-        var host = server.address().address
-        var port = server.address().port
+FlarePromise.prototype.actor = function (uri) {
+  return this.then(function (flare) {
+    return _.defaults({path: uri}, flare)
+  })
+}
 
-        flare.path = 'http://' + host + ':' + port + (base || '')
-        resolve()
+FlarePromise.prototype.as = function (actorName) {
+  return this.then(function (flare) {
+    return _.defaults({currentActorName: actorName}, flare)
+  })
+}
+
+FlarePromise.prototype.actor = function (actorName, actor) {
+  return this.then(function (flare) {
+    var state = {actors: {}}
+    state.actors[actorName] = actor
+    return _.merge(state, flare)
+  })
+}
+
+FlarePromise.prototype.express = function FlarePromise$express(app, base) {
+  return this.then(function (flare) {
+    return FlarePromise.resolve(app).then(function (app) {
+      return new FlarePromise(function (resolve, reject) {
+        var server = http.Server(app)
+        server.listen(0, function(){
+          var host = server.address().address
+          var port = server.address().port
+
+          var path = 'http://' + host + ':' + port + (base || '')
+          resolve(_.defaults({path: path}, flare))
+        })
       })
     })
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.get = function (uri, queryString, opts) {
+FlarePromise.prototype.get = function (uri, queryString, opts) {
   var self = this
-  var flare = this
-  return FlarePromise.try(function () {
+  return this.then(function (flare) {
     return self.request(_.defaults(opts || {}, {
       method: 'get',
       uri: flare.path + uri,
-      qs: queryString
+      qs: queryString,
+      json: true
     }))
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.post = function (uri, body, opts) {
+FlarePromise.prototype.post = function (uri, body, opts) {
   var self = this
-  var flare = this
-  return FlarePromise.try(function () {
+  return this.then(function (flare) {
     return self.request(_.defaults(opts || {},{
       method: 'post',
       uri: flare.path + uri,
       json: body
     }))
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.put = function (uri, body, opts) {
+FlarePromise.prototype.put = function (uri, body, opts) {
   var self = this
-  var flare = this
-  return FlarePromise.try(function () {
-    return self.request(_.defaults(opts || {}, {
+  return this.then(function (flare) {
+    return self.request(_.defaults(opts || {},{
       method: 'put',
       uri: flare.path + uri,
       json: body
     }))
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.patch = function (uri, body, opts) {
+FlarePromise.prototype.patch = function (uri, body, opts) {
   var self = this
-  var flare = this
-  return FlarePromise.try(function () {
+  return this.then(function (flare) {
     return self.request(_.defaults(opts || {},{
       method: 'patch',
       uri: flare.path + uri,
       json: body
     }))
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.del = function (uri, body, opts) {
+FlarePromise.prototype.del = function (uri, body, opts) {
   var self = this
-  var flare = this
-  return FlarePromise.try(function () {
-    return self.request(_.defaults(opts || {}, {
+  return this.then(function (flare) {
+    return self.request(_.defaults(opts || {},{
       method: 'delete',
       uri: flare.path + uri,
       json: body
     }))
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.expect = function (statusCode, schema) {
-  var flare = this
-  return FlarePromise.try(function () {
-
-    flare.schema = unstash(schema, flare.stashed)
+FlarePromise.prototype.expect = function (statusCode, schema) {
+  return this.then(function (flare) {
     return new FlarePromise(function (resolve, reject) {
       var status = flare.res.statusCode
+
+      if (typeof schema !== 'function') {
+        schema = unstash(schema, flare.stash)
+      }
 
       if (typeof status === 'number' && status !== statusCode) {
         var message = 'Status code should be ' + statusCode +
@@ -221,23 +218,16 @@ Flare.prototype.expect = function (statusCode, schema) {
         return reject(new Error(message))
       }
 
-      if (typeof status === 'function') {
-        flare.schema = status
-      }
-
       if (!schema) {
         return resolve(flare)
       }
 
       if (typeof schema === 'function') {
-        try {
-          schema(flare.res, flare.stashed)
-          return resolve(flare)
-        } catch(err) {
-          return reject(err)
-        }
+        schema(flare.res, flare.stash)
+        return resolve(flare)
       }
-      Joi.validate(flare.res.body, flare.schema, {
+
+      Joi.validate(flare.res.body, schema, {
         convert: false,
         presence: 'required'
       }, function (err) {
@@ -250,12 +240,11 @@ Flare.prototype.expect = function (statusCode, schema) {
         resolve(flare)
       })
     })
-  }).bind(flare)
+  })
 }
 
-Flare.prototype.stash = function (name) {
-  var flare = this
-  return FlarePromise.try(function () {
+FlarePromise.prototype.stash = function (name) {
+  return this.then(function (flare) {
     var body = flare.res.body
 
     if (_.isString(body) && flare.res.headers &&
@@ -263,24 +252,8 @@ Flare.prototype.stash = function (name) {
       body = JSON.parse(body)
     }
 
-    flare.stashed[name] = body
-    return flare
-  }).bind(flare)
+    var state = {stash: {}}
+    state.stash[name] = body
+    return _.merge(state, flare)
+  })
 }
-
-FlarePromise.prototype = _.assign(FlarePromise.prototype,
-                      _.transform(Object.keys(Flare.prototype),
-                      function (methods, methodName) {
-
-  methods[methodName] = function () {
-    var flare = this._boundTo
-    var args = arguments
-    return this._then(function () {
-      if (!flare || !flare._isFlare) {
-        throw new Error('Missing flare object binding')
-      }
-
-      return flare[methodName].apply(flare, args)
-    })
-  }
-}, {}))

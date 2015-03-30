@@ -25,9 +25,8 @@ Default config for Joi validation:
 
 ```js
 var Joi = require('joi')
-var Flare = require('flare-gun')
-
-var flare = new Flare().route('http://myapp.com/api')
+var flareGun = require('flare-gun')
+var flare = flareGun.route('http://myapp.com/api')
 
 describe('MyApp', function () {
   it('gets users', function () {
@@ -78,7 +77,7 @@ Stashed variables can be injected in any string, by prefixing with a `:`
 e.g.
 
 ```js
-flare
+flareGun
   .post('/user')
   .stash('joe')
   .post('/users/:joe.id', {name: ':joe.name'})
@@ -100,7 +99,7 @@ requestObj gets combind with requests before being passed to [request.js](https:
 ##### `.as(String name)` -> `FlarePromise`
 
 ```js
-flare
+flareGun
   .actor('joe', {
     auth: {
       user: 'joe',
@@ -112,21 +111,6 @@ flare
   .get('/asJoe')
   .as('anon')
   .get('/asAnon')
-```
-
-##### `.flare(Function handler(flare))` -> `FlarePromise`
-
-Multiple requests in parallel
-
-```js
-.flare(function (flare) {
-
-  // create experiments
-  return Promise.map(Array(4), function (experiment) {
-    return flare
-      .post('/experiments', {id: 23})
-  })
-})
 ```
 
 ##### `.route(String url)` -> `FlarePromise`
@@ -144,3 +128,10 @@ Also accepts a promise of an express server
 ```sh
 $ npm test
 ```
+
+## Changelog
+
+  - 0.5.x -> 0.6.0
+    - Flare gun has become properly pure, which means that side effects will not impact other chains  
+      This also means that Flare gun has become a singleton, without needing to be instantiated.
+    - Removed `flare` method

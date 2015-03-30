@@ -7,8 +7,8 @@ var ROOT = {
 }
 
 var Promise = require('bluebird')
-var Flare = require('../')
-var flare = new Flare().route(ROOT.URL)
+var flareGun = require('../')
+var flare = flareGun.route(ROOT.URL)
 var assert = require('assert')
 var Joi = require('joi')
 var fs = require('fs')
@@ -20,19 +20,16 @@ var basicAuth = require('basic-auth')
 describe('Flare Gun', function () {
   before(function (done) {
 
-    function respond(req, res, next) {
+    function respond(req, res) {
       res.send('hello ' + req.params.name)
-      next()
     }
 
-    function mirror(req, res, next) {
+    function mirror(req, res) {
       res.json(req.body)
-      next()
     }
 
-    function mirrorQuery(req, res, next) {
+    function mirrorQuery(req, res) {
       res.json(req.query)
-      next()
     }
 
     var server = express()
@@ -266,9 +263,9 @@ describe('Flare Gun', function () {
       .post('/mirror', {text: 'boom'})
       .stash('mirror')
       .get('/hello/joe')
-      .expect(200, function (res, stashed) {
+      .expect(200, function (res, stash) {
         assert(res.body === 'hello joe')
-        assert(stashed.mirror.text === 'boom' )
+        assert(stash.mirror.text === 'boom' )
       })
   })
 
@@ -346,6 +343,19 @@ describe('Flare Gun', function () {
         })
   })
 
+  it('is pure', function () {
+    return flare
+      .get('/mirrorQuery', {hello: 'world'})
+      .stash('query')
+      .then(function (_flare) {
+        assert(_flare.stash.query.hello === 'world')
+        return flare
+      })
+      .then(function (flare) {
+        assert(flare.stash.query === undefined)
+      })
+  })
+
   it('acts', function () {
     return flare
       .actor('joe', {
@@ -366,27 +376,6 @@ describe('Flare Gun', function () {
       })
   })
 
-  it('flares', function () {
-    return flare
-      .flare(function (flare) {
-
-        // create experiments
-        return Promise.map(Array(4), function (experiment) {
-          return flare
-            .post('/experiments', experiment)
-        })
-      })
-      .flare(function (flare) {
-        return Promise.map(Array(4), function () {
-          return flare
-            .request({
-              uri: ROOT.URL + '/authed',
-              method: 'get'
-            })
-        })
-      })
-  })
-
   it('binds express objects', function () {
     var app = express()
 
@@ -394,7 +383,7 @@ describe('Flare Gun', function () {
       res.end('hello ' + req.url)
     })
 
-    return new Flare().express(app)
+    return flareGun.express(app)
       .get('/test')
       .expect(200, 'hello /test')
   })
@@ -406,7 +395,7 @@ describe('Flare Gun', function () {
       res.end('hello ' + req.url)
     })
 
-    return new Flare().express(app, '/base')
+    return flareGun.express(app, '/base')
       .get('/test')
       .expect(200, 'hello /base/test')
   })
@@ -422,7 +411,7 @@ describe('Flare Gun', function () {
       res.end('hello ' + req.url)
     })
 
-    return new Flare().express(appPromise)
+    return flareGun.express(appPromise)
       .get('/test')
       .expect(200, 'hello /test')
   })
