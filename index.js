@@ -10,7 +10,6 @@ module.exports = Flare
 
 function Flare(opts) {
   opts = opts || {}
-  this.docFilePath = opts.docFilePath || ''
   this.path = opts.path || ''
   this.stashed = opts.stashed || {}
   this.res = opts.res || {}
@@ -87,50 +86,10 @@ Flare.prototype.as = function (name) {
   }).bind(flare)
 }
 
-Flare.prototype.docFile = function FlarePromise$docFile(path) {
-  var flare = this
-  return FlarePromise.try(function () {
-    flare.docFilePath = path
-    return flare
-  }).bind(flare)
-}
-
 Flare.prototype.flare = function FlarePromise$flare(fn) {
   var flare = this
   return FlarePromise.try(function () {
     return fn(flare)
-  }).bind(flare)
-}
-
-Flare.prototype.doc = function FlarePromise$doc(title, description) {
-  var flare = this
-  return FlarePromise.try(function () {
-    if (!flare.docFilePath) {
-      throw new Error('docFile not specified')
-    }
-    return fs.readFileAsync(flare.docFilePath)
-      .then(function (file) {
-        return JSON.parse(file)
-      }, function (err) {
-        return []
-      })
-      .then(function (docs) {
-        docs.push({
-          title: title,
-          description: description,
-          req: flare.req,
-          res: flare.res,
-          schema: flare.schema
-        })
-
-        // clear out doc state
-        delete flare.schema
-        delete flare.req
-
-        return fs.writeFileAsync(flare.docFilePath, JSON.stringify(docs))
-      }).then(function () {
-        return flare
-      })
   }).bind(flare)
 }
 
