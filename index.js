@@ -257,3 +257,10 @@ FlarePromise.prototype.stash = function (name) {
     return _.merge(state, flare)
   })
 }
+
+FlarePromise.prototype.thru = function (cb) {
+  var self = this
+  return this.then(function (flare) {
+    return cb(self)
+  })
+}

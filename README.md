@@ -72,6 +72,8 @@ describe('MyApp', function () {
 
 ##### `.stash(String name)` -> `FlarePromise`
 
+##### `.thru(Function<FlarePromise>(FlarePromise))` -> `FlarePromise`
+
 Options are passed through to [request](https://github.com/request/request)
 Stashed variables can be injected in any string, by prefixing with a `:`  
 e.g.
@@ -135,3 +137,4 @@ $ npm test
     - Flare gun has become properly pure, which means that side effects will not impact other chains  
       This also means that Flare gun has become a singleton, without needing to be instantiated.
     - Removed `flare` method
+    - Added `thru` method

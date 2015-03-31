@@ -356,6 +356,26 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('thrus', function () {
+    return flare
+      .get('/mirrorQuery', {hello: 'world'})
+      .stash('query')
+      .thru(function (flare) {
+        return flare
+          .get('/mirrorQuery', {hello: 'world2'})
+          .stash('query2')
+          .then(function (flare) {
+            assert(flare.stash.query.hello === 'world')
+            assert(flare.stash.query2.hello === 'world2')
+            return flare
+          })
+      })
+      .then(function (flare) {
+        assert(flare.stash.query.hello === 'world')
+        assert(flare.stash.query2.hello === 'world2')
+      })
+  })
+
   it('acts', function () {
     return flare
       .actor('joe', {
