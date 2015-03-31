@@ -121,7 +121,7 @@ FlarePromise.prototype.actor = function (actorName, actor) {
   return this.then(function (flare) {
     var state = {actors: {}}
     state.actors[actorName] = unstash(actor, flare.stash)
-    return _.merge(state, flare)
+    return _.merge(_.cloneDeep(flare), state)
   })
 }
 

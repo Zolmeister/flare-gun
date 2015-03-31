@@ -48,7 +48,8 @@ describe('Flare Gun', function () {
 
     server.get('/authed', function (req, res) {
       var user = basicAuth(req)
-      if (!user || !user.name || !user.pass) {
+      if (!user || !user.name || !user.pass ||
+        user.name === 'INVALID' || user.pass === 'INVALID') {
         return res.status(401).end()
       }
 
@@ -407,6 +408,28 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('overrides old actors', function () {
+    return flare
+      .actor('joe', {
+        auth: {
+          user: 'joe',
+          pass: 'joePass'
+        }
+      })
+      .as('joe')
+      .get('/authed')
+      .expect(200)
+      .actor('joe', {
+        auth: {
+          user: 'INVALID',
+          pass: 'INVALID'
+        }
+      })
+      .as('joe')
+      .get('/authed')
+      .expect(401)
+  })
+
   it('de-stashes actors', function () {
     return flare
       .post('/mirror', {user: 'joe', pass: 'joePass'})
@@ -420,6 +443,8 @@ describe('Flare Gun', function () {
         }
       })
       .as('joe')
+      .post('/mirror', {user: 'joe2', pass: 'joePass2'})
+      .stash('creds')
       .get('/authed')
       .expect(200)
   })
