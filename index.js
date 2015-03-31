@@ -80,11 +80,14 @@ FlarePromise.prototype.flare = function FlarePromise$flare(fn) {
 FlarePromise.prototype.request = function (opts) {
   return this.then(function (flare) {
     // materialize the stash
-    opts.uri = unstash(opts.uri, flare.stash)
-    opts.json = unstash(opts.json, flare.stash)
-    opts.qs = unstash(opts.qs, flare.stash)
-    opts.followRedirect = false
-    opts = _.defaults(flare.actors[flare.currentActorName] || {}, opts)
+    opts = _.defaults({
+      uri: unstash(opts.uri, flare.stash),
+      json: unstash(opts.json, flare.stash),
+      qs: unstash(opts.qs, flare.stash),
+      followRedirect: false
+    }, opts)
+
+    opts = _.merge(opts, flare.actors[flare.currentActorName])
 
     return new FlarePromise(function (resolve, reject) {
       _request(opts, function (err, res) {
@@ -103,12 +106,6 @@ FlarePromise.prototype.request = function (opts) {
 }
 
 FlarePromise.prototype.route = function (uri) {
-  return this.then(function (flare) {
-    return _.defaults({path: uri}, flare)
-  })
-}
-
-FlarePromise.prototype.actor = function (uri) {
   return this.then(function (flare) {
     return _.defaults({path: uri}, flare)
   })
@@ -163,7 +160,7 @@ FlarePromise.prototype.post = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'post',
       uri: flare.path + uri,
-      json: body
+      json: body || true
     }))
   })
 }
@@ -174,7 +171,7 @@ FlarePromise.prototype.put = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'put',
       uri: flare.path + uri,
-      json: body
+      json: body || true
     }))
   })
 }
@@ -185,7 +182,7 @@ FlarePromise.prototype.patch = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'patch',
       uri: flare.path + uri,
-      json: body
+      json: body || true
     }))
   })
 }
@@ -196,7 +193,7 @@ FlarePromise.prototype.del = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'delete',
       uri: flare.path + uri,
-      json: body
+      json: body || true
     }))
   })
 }

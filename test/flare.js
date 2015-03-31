@@ -35,6 +35,11 @@ describe('Flare Gun', function () {
     var server = express()
     server.use(bodyParser.json())
 
+    server.post('/json', function (req, res) {
+      res.json({
+        json: 'json'
+      })
+    })
     server.get('/hello/:name', respond)
     server.get('/hello/:name/:friend', function (req, res, next) {
       res.send('hello ' + req.params.name + ' from ' + req.params.friend)
@@ -133,6 +138,12 @@ describe('Flare Gun', function () {
       .then(function (flare) {
         assert(flare.res.body.hello === 'world', 'Flare didn\'t post!')
       })
+  })
+
+  it('returns json with post, without body', function () {
+    return flare
+      .post('/json')
+      .expect(200, {json: 'json'})
   })
 
   it('puts', function () {
