@@ -407,6 +407,23 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('de-stashes actors', function () {
+    return flare
+      .post('/mirror', {user: 'joe', pass: 'joePass'})
+      .stash('creds')
+      .get('/authed')
+      .expect(401)
+      .actor('joe', {
+        auth: {
+          user: ':creds.user',
+          pass: ':creds.pass'
+        }
+      })
+      .as('joe')
+      .get('/authed')
+      .expect(200)
+  })
+
   it('binds express objects', function () {
     var app = express()
 

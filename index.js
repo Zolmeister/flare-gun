@@ -120,7 +120,7 @@ FlarePromise.prototype.as = function (actorName) {
 FlarePromise.prototype.actor = function (actorName, actor) {
   return this.then(function (flare) {
     var state = {actors: {}}
-    state.actors[actorName] = actor
+    state.actors[actorName] = unstash(actor, flare.stash)
     return _.merge(state, flare)
   })
 }
@@ -208,10 +208,11 @@ FlarePromise.prototype.expect = function (statusCode, schema) {
       }
 
       if (typeof status === 'number' && status !== statusCode) {
+        var body = flare.res.body || null
         var message = 'Status code should be ' + statusCode +
                       ', not ' + status
         message += '\n    at ' +
-          JSON.stringify(flare.res.body, null, 2).replace(/\n/g,'\n    at ')
+          JSON.stringify(body, null, 2).replace(/\n/g,'\n    at ')
         return reject(new Error(message))
       }
 
@@ -229,8 +230,9 @@ FlarePromise.prototype.expect = function (statusCode, schema) {
         presence: 'required'
       }, function (err) {
         if (err) {
+          var body = flare.res.body || null
           err.message += '\n    at ' +
-            JSON.stringify(flare.res.body, null, 2).replace(/\n/g,'\n    at ')
+            JSON.stringify(body, null, 2).replace(/\n/g,'\n    at ')
           return reject(err)
         }
 
