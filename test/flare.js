@@ -307,6 +307,20 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('overrides previous stashes', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .post('/mirror', {text: 'RAH'})
+      .stash('mirror')
+      .post('/mirror', {
+        text: ':mirror.text'
+      })
+      .expect(200, {
+        text: 'RAH'
+      })
+  })
+
   it('stashes with bodies', function () {
     return flare
       .post('/mirror', {text: 'boom'})

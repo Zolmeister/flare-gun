@@ -253,7 +253,7 @@ FlarePromise.prototype.stash = function (name) {
 
     var state = {stash: {}}
     state.stash[name] = body
-    return _.merge(state, flare)
+    return _.merge(_.cloneDeep(flare), state)
   })
 }
 
