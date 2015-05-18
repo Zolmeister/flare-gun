@@ -126,7 +126,7 @@ Also accepts a promise of an express server
 
 ##### `.close()` -> `FlarePromise`
 
-Close express server
+Close express server. May close more connections in the future.
 
 
 ## Contributing
