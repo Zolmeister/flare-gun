@@ -124,6 +124,10 @@ Set the base url for requests
 Pass in an express server object to make calls to, instead of a url
 Also accepts a promise of an express server
 
+##### `.close()` -> `FlarePromise`
+
+Close express server
+
 
 ## Contributing
 

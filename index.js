@@ -12,7 +12,8 @@ var flareGun = new FlarePromise(function (resolve) {
     stash: {},
     res: {},
     currentActorName: null,
-    actors: {}
+    actors: {},
+    server: null
   })
 })
 
@@ -135,10 +136,20 @@ FlarePromise.prototype.express = function FlarePromise$express(app, base) {
           var port = server.address().port
 
           var path = 'http://' + host + ':' + port + (base || '')
-          resolve(_.defaults({path: path}, flare))
+          resolve(_.defaults({path: path, server: server}, flare))
         })
       })
     })
+  })
+}
+
+FlarePromise.prototype.close = function FlarePromise$end() {
+  return this.then(function (flare) {
+    if (flare.server) {
+      flare.server.close()
+    }
+
+    return flare
   })
 }
 

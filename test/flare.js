@@ -503,4 +503,17 @@ describe('Flare Gun', function () {
       .expect(200, 'hello /test')
   })
 
+  it('closes express server', function () {
+    var app = express()
+
+    app.use(function (req, res, next) {
+      res.end('hello ' + req.url)
+    })
+
+    return flareGun.express(app)
+      .get('/test')
+      .expect(200, 'hello /test')
+      .close()
+  })
+
 })
