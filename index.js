@@ -30,9 +30,11 @@ function unstash(obj, stash) {
 
 function unstashString(param, stash) {
   if (!/^:[a-zA-Z][\w.]+$/.test(param)) {
-    return param.replace(/:[a-zA-Z][\w.]+/g, function (param) {
-      return unstashString(param, stash)
-    })
+    return param.replace(/([^\\])(:[a-zA-Z][\w.]+)/g, function (param, prefix, prop) {
+      return prefix + prop.replace(/:[a-zA-Z][\w.]+/g, function (match) {
+        return unstashString(match, stash)
+      })
+    }).replace(/\\(:[a-zA-Z][\w.]+)/g, '$1')
   }
 
   var name = param.slice(param.indexOf(':') + 1).split('.')[0]

@@ -305,6 +305,17 @@ describe('Flare Gun', function () {
         text: 'boom',
         nes: 'nes'
       })
+      // escape character support
+      .post('/mirror', {
+        text: '\\:mirror2.text',
+        nes: '\\:mirror2.nestor.nested'
+      })
+      .stash('mirror2')
+      .then(function (flare) {
+        assert(flare.res.body.text === ':mirror2.text')
+        assert(flare.res.body.nes === ':mirror2.nestor.nested')
+        return flare
+      })
   })
 
   it('overrides previous stashes', function () {
