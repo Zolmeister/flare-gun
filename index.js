@@ -83,13 +83,7 @@ FlarePromise.prototype.flare = function FlarePromise$flare(fn) {
 FlarePromise.prototype.request = function (opts) {
   return this.then(function (flare) {
     // materialize the stash
-    opts = _.defaults({
-      uri: unstash(opts.uri, flare.stash),
-      json: unstash(opts.json, flare.stash),
-      qs: unstash(opts.qs, flare.stash),
-      followRedirect: false
-    }, opts)
-
+    opts = _.defaults({followRedirect: false}, unstash(opts, flare.stash))
     opts = _.merge(opts, flare.actors[flare.currentActorName])
 
     return new FlarePromise(function (resolve, reject) {
