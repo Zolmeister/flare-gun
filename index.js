@@ -122,9 +122,9 @@ FlarePromise.prototype.as = function (actorName) {
 
 FlarePromise.prototype.actor = function (actorName, actor) {
   return this.then(function (flare) {
-    var state = {actors: {}}
-    state.actors[actorName] = unstash(actor, flare.stash)
-    return _.merge(_.cloneDeep(flare), state)
+    var actors = _.cloneDeep(flare.actors)
+    actors[actorName] = unstash(actor, flare.stash)
+    return _.defaults({actors: actors}, flare)
   })
 }
 
@@ -264,9 +264,9 @@ FlarePromise.prototype.stash = function (name) {
       body = JSON.parse(body)
     }
 
-    var state = {stash: {}}
-    state.stash[name] = body
-    return _.merge(_.cloneDeep(flare), state)
+    var stash = _.cloneDeep(flare.stash)
+    stash[name] = body
+    return _.defaults({stash: stash}, flare)
   })
 }
 
