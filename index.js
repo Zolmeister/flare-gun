@@ -127,7 +127,7 @@ FlarePromise.prototype.express = function FlarePromise$express(app, base) {
     return FlarePromise.resolve(app).then(function (app) {
       return new FlarePromise(function (resolve, reject) {
         var server = http.Server(app)
-        server.listen(0, function(){
+        server.listen(0, '127.0.0.1', function(){
           var host = server.address().address
           var port = server.address().port
 
