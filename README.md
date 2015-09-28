@@ -128,6 +128,9 @@ Also accepts a promise of an express server
 
 Close express server. May close more connections in the future.
 
+##### `.exoid(String path, Object body)` -> `FlarePromise`
+
+Calls an exoid method at '/exoid'. See https://github.com/Zorium/exoid
 
 ## Contributing
 

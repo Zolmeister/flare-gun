@@ -149,6 +149,48 @@ FlarePromise.prototype.close = function FlarePromise$end() {
   })
 }
 
+FlarePromise.prototype.exoid = function (path, body) {
+  var self = this
+  body = body === undefined ? {} : body
+
+  return this.then(function (flare) {
+    return self.request({
+      method: 'post',
+      uri: flare.path + '/exoid',
+      json: {
+        requests: [{path: path, body: body}]
+      }
+    })
+    .then(function (flare) {
+      if (flare.res.statusCode != 200) {
+        return flare
+      }
+
+      var exoidResponse = flare.res.body
+      var error = exoidResponse.errors[0]
+      var result = exoidResponse.results[0]
+
+      if (error) {
+        return _.defaults({
+          res: {
+            statusCode: error.status,
+            body: error,
+            cache: exoidResponse.cache
+          }
+        }, flare)
+      } else {
+        return _.defaults({
+          res: {
+            statusCode: 200,
+            body: result,
+            cache: exoidResponse.cache
+          }
+        }, flare)
+      }
+    })
+  })
+}
+
 FlarePromise.prototype.get = function (uri, queryString, opts) {
   var self = this
   return this.then(function (flare) {
@@ -206,6 +248,11 @@ FlarePromise.prototype.del = function (uri, body, opts) {
 }
 
 FlarePromise.prototype.expect = function (statusCode, schema) {
+  if (!schema && typeof statusCode !== 'number') {
+    schema = statusCode
+    statusCode = 200
+  }
+
   return this.then(function (flare) {
     return new FlarePromise(function (resolve, reject) {
       var status = flare.res.statusCode
@@ -214,7 +261,7 @@ FlarePromise.prototype.expect = function (statusCode, schema) {
         schema = unstash(schema, flare.stash)
       }
 
-      if (typeof status === 'number' && status !== statusCode) {
+      if (typeof statusCode === 'number' && status !== statusCode) {
         var body = flare.res.body || null
         var message = 'Status code should be ' + statusCode +
                       ', not ' + status

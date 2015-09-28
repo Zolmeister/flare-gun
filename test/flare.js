@@ -70,6 +70,14 @@ describe('Flare Gun', function () {
     server.put('/mirrorQuery', mirrorQuery)
     server.delete('/mirrorQuery', mirrorQuery)
 
+    server.post('/exoid', function (req, res) {
+      res.json({
+        results: [req.body.requests[0].body],
+        errors: [null],
+        cache: []
+      })
+    })
+
     server.listen(ROOT.PORT, done)
   })
 
@@ -138,6 +146,15 @@ describe('Flare Gun', function () {
       .post('/mirror', null, {json: { hello: 'world' }})
       .then(function (flare) {
         assert(flare.res.body.hello === 'world', 'Flare didn\'t post!')
+      })
+  })
+
+  it('calls exoid methods', function () {
+    return flare
+      .exoid('test.all', {abc: 'xyz'})
+      .then(function (flare) {
+        assert(flare.res.body.abc === 'xyz', 'Flare didn\'t exoid!')
+        assert(flare.res.cache.length === 0, 'Flare didn\'t send cache')
       })
   })
 
