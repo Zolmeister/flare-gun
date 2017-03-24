@@ -71,6 +71,14 @@ function unstashObject(obj, stash) {
   })
 }
 
+function callMaybe(maybeFn, state) {
+  if (typeof maybeFn === 'function') {
+    return maybeFn({stash: state.stash})
+  } else {
+    return maybeFn
+  }
+}
+
 FlarePromise.prototype.flare = function FlarePromise$flare(fn) {
   var self = this
   return this.then(function (flare) {
@@ -151,14 +159,13 @@ FlarePromise.prototype.close = function FlarePromise$end() {
 
 FlarePromise.prototype.exoid = function (path, body) {
   var self = this
-  body = body === undefined ? {} : body
 
   return this.then(function (flare) {
     return self.request({
       method: 'post',
       uri: flare.path + '/exoid',
       json: {
-        requests: [{path: path, body: body}]
+        requests: [{path: path, body: callMaybe(body, flare)}]
       }
     })
     .then(function (flare) {
@@ -197,7 +204,7 @@ FlarePromise.prototype.get = function (uri, queryString, opts) {
     return self.request(_.defaults(opts || {}, {
       method: 'get',
       uri: flare.path + uri,
-      qs: queryString,
+      qs: callMaybe(queryString, flare),
       json: true
     }))
   })
@@ -209,7 +216,7 @@ FlarePromise.prototype.post = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'post',
       uri: flare.path + uri,
-      json: body || true
+      json: callMaybe(body, flare) || true
     }))
   })
 }
@@ -220,7 +227,7 @@ FlarePromise.prototype.put = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'put',
       uri: flare.path + uri,
-      json: body || true
+      json: callMaybe(body, flare) || true
     }))
   })
 }
@@ -231,7 +238,7 @@ FlarePromise.prototype.patch = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'patch',
       uri: flare.path + uri,
-      json: body || true
+      json: callMaybe(body, flare) || true
     }))
   })
 }
@@ -242,7 +249,7 @@ FlarePromise.prototype.del = function (uri, body, opts) {
     return self.request(_.defaults(opts || {},{
       method: 'delete',
       uri: flare.path + uri,
-      json: body || true
+      json: callMaybe(body, flare) || true
     }))
   })
 }

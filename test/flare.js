@@ -335,6 +335,36 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('passes stash to request body functions', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .get('/mirrorQuery', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+      .post('/mirror', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+      .put('/mirror', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+      .patch('/mirror', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+      .del('/mirror', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+      .exoid('mirror.mirror', function ({stash}) {
+        return stash.mirror
+      })
+      .expect({text: ':mirror.text'})
+  })
+
   it('overrides previous stashes', function () {
     return flare
       .post('/mirror', {text: 'boom'})
