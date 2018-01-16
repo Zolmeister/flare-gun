@@ -198,6 +198,45 @@ FlarePromise.prototype.exoid = function (path, body) {
   })
 }
 
+FlarePromise.prototype.graph = function (query, variables) {
+  var self = this
+
+  return this.then(function (flare) {
+    return self.request({
+      method: 'post',
+      uri: flare.path + '/graphql',
+      json: {
+        query: query,
+        variables: callMaybe(variables, flare)
+      }
+    })
+    .then(function (flare) {
+      if (flare.res.statusCode != 200) {
+        return flare
+      }
+
+      var error = flare.res.body.errors
+      var result = flare.res.body.data
+
+      if (error) {
+        return _.defaults({
+          res: {
+            statusCode: 400,
+            body: error
+          }
+        }, flare)
+      } else {
+        return _.defaults({
+          res: {
+            statusCode: 200,
+            body: result
+          }
+        }, flare)
+      }
+    })
+  })
+}
+
 FlarePromise.prototype.get = function (uri, queryString, opts) {
   var self = this
   return this.then(function (flare) {

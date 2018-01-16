@@ -78,6 +78,12 @@ describe('Flare Gun', function () {
       })
     })
 
+    server.post('/graphql', function (req, res) {
+      res.json({
+        data: req.body.variables
+      })
+    })
+
     server.listen(ROOT.PORT, done)
   })
 
@@ -155,6 +161,14 @@ describe('Flare Gun', function () {
       .then(function (flare) {
         assert(flare.res.body.abc === 'xyz', 'Flare didn\'t exoid!')
         assert(flare.res.cache.length === 0, 'Flare didn\'t send cache')
+      })
+  })
+
+  it('calls graphql methods', function () {
+    return flare
+      .graph('{mirror($abc: String!)}', {abc: 'xyz'})
+      .then(function (flare) {
+        assert(flare.res.body.abc === 'xyz', 'Flare didn\'t graphql!')
       })
   })
 
@@ -363,6 +377,10 @@ describe('Flare Gun', function () {
         return stash.mirror
       })
       .expect({text: ':mirror.text'})
+      .graph('{mirror($abc: String!)}', function ({stash}) {
+        return {abc: stash.mirror}
+      })
+      .expect({abc: {text: ':mirror.text'}})
   })
 
   it('overrides previous stashes', function () {
