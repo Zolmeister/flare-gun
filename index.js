@@ -62,7 +62,8 @@ function unstashObject(obj, stash) {
     if (_.isPlainObject(val) ||
         _.isString(val) ||
         _.isArray(val) ||
-        isJoiObj(val)) {
+        // avoid circular reference
+        isJoiObj(val) && key != '_currentJoi') {
       result[key] = unstash(val, stash)
     } else {
       result[key] = val
