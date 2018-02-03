@@ -312,6 +312,21 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('expects supports promise response', function () {
+    flare
+      .get('/hello/joe')
+      .expect(200, function () {
+        return new Promise(function (resolve, reject) {
+          reject(new Error('async error'))
+        })
+      })
+      .then(() => {
+        throw new Error('Expected error')
+      }, (err) => {
+        assert(err.message === 'async error')
+      })
+  })
+
   it('stashes', function () {
     return flare
       .post('/mirror', {text: 'boom', nestor: { nested: 'nes'}})

@@ -322,7 +322,10 @@ FlarePromise.prototype.expect = function (statusCode, schema) {
       }
 
       if (typeof schema === 'function') {
-        schema(flare.res, flare.stash)
+        var res = schema(flare.res, flare.stash)
+        if (res != null && typeof res.then === 'function') {
+          return resolve(res.then(function(){return flare}))
+        }
         return resolve(flare)
       }
 
