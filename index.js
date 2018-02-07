@@ -92,11 +92,22 @@ FlarePromise.prototype.flare = function FlarePromise$flare(fn) {
 FlarePromise.prototype.request = function (opts) {
   return this.then(function (flare) {
     // materialize the stash
-    opts = _.defaults({followRedirect: false}, unstash(opts, flare.stash))
-    opts = _.merge(opts, flare.actors[flare.currentActorName])
+    var finalOpts = {
+      followRedirect: false,
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Cache-Control': 'max-age=0',
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64 Mobile Safari/537.36'
+      }
+    }
+    _.merge(finalOpts, flare.actors[flare.currentActorName])
+    _.merge(finalOpts, unstash(opts, flare.stash))
 
     return new FlarePromise(function (resolve, reject) {
-      _request(opts, function (err, res) {
+      _request(finalOpts, function (err, res) {
         if (err) {
           return reject(err)
         }

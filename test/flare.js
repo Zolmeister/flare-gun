@@ -32,6 +32,10 @@ describe('Flare Gun', function () {
       res.json(req.query)
     }
 
+    function mirrorHeaders(req, res) {
+      res.json(req.headers)
+    }
+
     var server = express()
     server.use(bodyParser.json())
 
@@ -65,6 +69,8 @@ describe('Flare Gun', function () {
     server.patch('/mirror', mirror)
     server.delete('/mirror', mirror)
 
+    server.get('/mirrorHeaders', mirrorHeaders)
+
     server.get('/mirrorQuery', mirrorQuery)
     server.post('/mirrorQuery', mirrorQuery)
     server.put('/mirrorQuery', mirrorQuery)
@@ -95,6 +101,26 @@ describe('Flare Gun', function () {
       })
       .then(function (flare) {
         assert(flare.res.body === 'hello joe', 'Flare didn\'t get!')
+      })
+  })
+
+  it('requests with browser headers defaulted', function () {
+    return flare
+      .request({
+        uri: ROOT.URL + '/mirrorHeaders',
+        method: 'get'
+      })
+      .then(function (flare) {
+        assert.deepStrictEqual(JSON.parse(flare.res.body), {
+          'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
+          'accept-encoding': 'gzip, deflate, br',
+          'accept-language': 'en-US,en;q=0.9',
+          'cache-control': 'max-age=0',
+          'connection': 'keep-alive',
+          'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64 Mobile Safari/537.36',
+          'content-length': '0',
+          'host': 'localhost:3091'
+        })
       })
   })
 
