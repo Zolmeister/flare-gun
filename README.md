@@ -140,6 +140,13 @@ $ npm test
 
 ## Changelog
 
+  - 0.7.x -> 0.8.x
+    - expect(cb) is now passed res.body instead of res
+  - 0.6.x -> 0.7.x
+    - add graph()
+    - upgrade Joi (now peer dependency)
+    - add userAgent string default
+    - expect(cb) promise support
   - 0.5.x -> 0.6.0
     - Flare gun has become properly pure, which means that side effects will not impact other chains  
       This also means that Flare gun has become a singleton, without needing to be instantiated.
