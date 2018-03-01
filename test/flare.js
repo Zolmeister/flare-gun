@@ -332,8 +332,8 @@ describe('Flare Gun', function () {
       .post('/mirror', {text: 'boom'})
       .stash('mirror')
       .get('/hello/joe')
-      .expect(200, function (res, stash) {
-        assert(res.body === 'hello joe')
+      .expect(200, function (body, stash) {
+        assert(body === 'hello joe')
         assert(stash.mirror.text === 'boom' )
       })
   })
@@ -358,14 +358,14 @@ describe('Flare Gun', function () {
       .post('/mirror', {text: 'boom', nestor: { nested: 'nes'}})
       .stash('mirror')
       .get('/hello/:mirror.text/:mirror.nestor.nested')
-      .expect(200, function (res) {
-        assert(res.body === 'hello boom from nes')
+      .expect(200, function (body) {
+        assert(body === 'hello boom from nes')
       })
       .get('/hello/bob/joe')
       .stash('mirrorString')
       .get('/hello/:mirror.text/:mirrorString')
-      .expect(200, function (res) {
-        assert(res.body === 'hello boom from hello bob from joe')
+      .expect(200, function (body) {
+        assert(body === 'hello boom from hello bob from joe')
       })
       .post('/mirror', {
         top: ':mirrorString',
