@@ -6,7 +6,6 @@ var ROOT = {
   PORT: 3091
 }
 
-var Promise = require('bluebird')
 var flareGun = require('../')
 var flare = flareGun.route(ROOT.URL)
 var assert = require('assert')
@@ -16,6 +15,8 @@ var _ = require('lodash')
 var express = require('express')
 var bodyParser = require('body-parser')
 var basicAuth = require('basic-auth')
+var SocketIO = require('socket.io')
+var http = require('http')
 
 describe('Flare Gun', function () {
   before(function (done) {
@@ -36,21 +37,21 @@ describe('Flare Gun', function () {
       res.json(req.headers)
     }
 
-    var server = express()
-    server.use(bodyParser.json())
+    var app = express()
+    app.use(bodyParser.json())
 
-    server.post('/json', function (req, res) {
+    app.post('/json', function (req, res) {
       res.json({
         json: 'json'
       })
     })
-    server.get('/hello/:name', respond)
-    server.get('/hello/:name/:friend', function (req, res, next) {
+    app.get('/hello/:name', respond)
+    app.get('/hello/:name/:friend', function (req, res, next) {
       res.send('hello ' + req.params.name + ' from ' + req.params.friend)
       next()
     })
 
-    server.get('/authed', function (req, res) {
+    app.get('/authed', function (req, res) {
       var user = basicAuth(req)
       if (!user || !user.name || !user.pass ||
         user.name === 'INVALID' || user.pass === 'INVALID') {
@@ -63,20 +64,20 @@ describe('Flare Gun', function () {
       })
     })
 
-    server.get('/mirror', mirror)
-    server.post('/mirror', mirror)
-    server.put('/mirror', mirror)
-    server.patch('/mirror', mirror)
-    server.delete('/mirror', mirror)
+    app.get('/mirror', mirror)
+    app.post('/mirror', mirror)
+    app.put('/mirror', mirror)
+    app.patch('/mirror', mirror)
+    app.delete('/mirror', mirror)
 
-    server.get('/mirrorHeaders', mirrorHeaders)
+    app.get('/mirrorHeaders', mirrorHeaders)
 
-    server.get('/mirrorQuery', mirrorQuery)
-    server.post('/mirrorQuery', mirrorQuery)
-    server.put('/mirrorQuery', mirrorQuery)
-    server.delete('/mirrorQuery', mirrorQuery)
+    app.get('/mirrorQuery', mirrorQuery)
+    app.post('/mirrorQuery', mirrorQuery)
+    app.put('/mirrorQuery', mirrorQuery)
+    app.delete('/mirrorQuery', mirrorQuery)
 
-    server.post('/exoid', function (req, res) {
+    app.post('/exoid', function (req, res) {
       res.json({
         results: [req.body.requests[0].body],
         errors: [null],
@@ -84,9 +85,21 @@ describe('Flare Gun', function () {
       })
     })
 
-    server.post('/graphql', function (req, res) {
+    app.post('/graphql', function (req, res) {
       res.json({
         data: req.body.variables
+      })
+    })
+
+    var server = http.createServer(app)
+    var io = SocketIO(server)
+
+    io.on('connection', function (socket) {
+      socket.on('graphql', function (message) {
+        socket.emit('graphql', {
+          handshake: socket.handshake,
+          message: message
+        })
       })
     })
 
@@ -113,7 +126,7 @@ describe('Flare Gun', function () {
       .then(function (flare) {
         assert.deepStrictEqual(JSON.parse(flare.res.body), {
           'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-          'accept-encoding': 'gzip, deflate, br',
+          'accept-encoding': 'gzip, deflate',
           'accept-language': 'en-US,en;q=0.9',
           'cache-control': 'max-age=0',
           'connection': 'keep-alive',
@@ -631,6 +644,37 @@ describe('Flare Gun', function () {
       .get('/test')
       .expect(200, 'hello /test')
       .close()
+  })
+
+  it('supports Socket.io WebSockets', function () {
+    var called = 0
+    return flare
+      .withSocket('x', {query: {token: 'abc'}}, function (flare) {
+        return flare.socketEmit('graphql', {
+          query: 'subscription ($id: ID!) { user(id: $id) }',
+          variables: {id: '123'}
+        })
+        .socketOn('graphql', function ({handshake, message}) {
+          called += 1
+          assert(handshake.query.token === 'abc', 'Token missing')
+          assert.deepStrictEqual(message, {
+            query: 'subscription ($id: ID!) { user(id: $id) }',
+            variables: {id: '123'}
+          })
+        })
+        .thru(function (flare) {
+          return new Promise(function (resolve, reject) {
+            setTimeout(function () {
+              try {
+                assert(called === 1, 'Socket did not respond')
+              } catch (err) {
+                return reject(err)
+              }
+              resolve(flare)
+            }, 30)
+          })
+        })
+      })
   })
 
 })

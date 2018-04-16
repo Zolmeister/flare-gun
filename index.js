@@ -5,6 +5,7 @@ var Joi = require('joi')
 var fs = FlarePromise.promisifyAll(require('fs'))
 var _ = require('lodash')
 var http = require('http')
+var SocketIO = require('socket.io-client')
 
 var flareGun = new FlarePromise(function (resolve) {
   resolve({
@@ -12,7 +13,9 @@ var flareGun = new FlarePromise(function (resolve) {
     stash: {},
     res: {},
     currentActorName: null,
+    currentSocketActorName: null,
     actors: {},
+    sockets: {},
     server: null
   })
 })
@@ -28,6 +31,7 @@ function unstash(obj, stash) {
   return unstashObject(obj, stash)
 }
 
+// IDEA: use ES6 template variables
 function unstashString(param, stash) {
   if (!/^:[a-zA-Z][\w.]+$/.test(param)) {
     return param.replace(/([^\\])(:[a-zA-Z][\w.]+)/g, function (param, prefix, prop) {
@@ -94,9 +98,9 @@ FlarePromise.prototype.request = function (opts) {
     // materialize the stash
     var finalOpts = {
       followRedirect: false,
+      gzip: true,
       headers: {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
         'Accept-Language': 'en-US,en;q=0.9',
         'Cache-Control': 'max-age=0',
         'Connection': 'keep-alive',
@@ -136,18 +140,98 @@ FlarePromise.prototype.as = function (actorName) {
 
 FlarePromise.prototype.actor = function (actorName, actor) {
   return this.then(function (flare) {
-    var actors = _.cloneDeep(flare.actors)
+    var actors = {}
     actors[actorName] = unstash(actor, flare.stash)
-    return _.defaults({actors: actors}, flare)
+    return _.defaults({
+      actors: _.defaults(actors, flare.actors)
+    }, flare)
   })
 }
 
-FlarePromise.prototype.express = function FlarePromise$express(app, base) {
+FlarePromise.prototype.socketEmit = function (channel, message) {
   return this.then(function (flare) {
-    return FlarePromise.resolve(app).then(function (app) {
+    var socket = flare.sockets[flare.currentSocketActorName]
+    if (!socket) {
+      throw new Error('Unknown socket actor ' + flare.currentSocketActorName)
+    }
+
+    socket.emit(channel, unstash(message, flare.stash))
+
+    return flare
+  })
+}
+
+FlarePromise.prototype.withSocket = function (socketActor, opts, callback) {
+  return this.then(function (flare) {
+    var sockets = {}
+    sockets[socketActor] = SocketIO(flare.path,
+        _.assign({forceNew: true}, unstash(opts, flare.stash))
+    )
+
+    flare = _.defaults({
+      currentSocketActorName: socketActor,
+      sockets: _.defaults(sockets, flare.sockets)
+    }, flare)
+
+    return callback(FlarePromise.resolve(flare)).then(function (flare) {
+      sockets[socketActor].disconnect()
+      return flare
+    })
+  })
+}
+
+// TODO: support mutliple open sockets
+// FlarePromise.prototype.asSocket = function (socketActorName) {
+//   return this.then(function (flare) {
+//     return _.defaults({currentSocketActorName: socketActorName}, flare)
+//   })
+// }
+
+FlarePromise.prototype.socketOn = function (channel, schema) {
+  return this.then(function (flare) {
+    var socket = flare.sockets[flare.currentSocketActorName]
+    if (!socket) {
+      throw new Error('Unknown socket actor ' + flare.currentSocketActorName)
+    }
+
+    socket.on(channel, function (message) {
+      if (typeof schema !== 'function') {
+        schema = unstash(schema, flare.stash)
+      }
+
+      if (!schema) {
+        return null
+      }
+
+      if (typeof schema === 'function') {
+        schema(message)
+        return null
+      }
+
+      Joi.validate(message, schema, {
+        convert: false,
+        presence: 'required'
+      }, function (err) {
+        if (err) {
+          err.message += '\n    at ' +
+            JSON.stringify(message, null, 2).replace(/\n/g,'\n    at ')
+          throw err
+        }
+      })
+    })
+
+    return flare
+  })
+}
+
+FlarePromise.prototype.express = function FlarePromise$express(server, base) {
+  return this.then(function (flare) {
+    return FlarePromise.resolve(server).then(function (server) {
       return new FlarePromise(function (resolve, reject) {
-        var server = http.Server(app)
-        server.listen(0, '127.0.0.1', function(){
+        if (!server.address) {
+          server = http.Server(server)
+        }
+        server.listen(0, '127.0.0.1', function() {
           var host = server.address().address
           var port = server.address().port
 
