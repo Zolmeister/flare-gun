@@ -677,4 +677,36 @@ describe('Flare Gun', function () {
       })
   })
 
+  it('stashes with transform', function () {
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror', function (res) {
+        assert.deepStrictEqual(res, {text: 'boom'})
+        return 'xxx'
+      })
+      .post('/mirror', {text: ':mirror'})
+      .expect(200, {text: 'xxx'})
+      .stash('mirror', function () {
+        return {a: {b: 'c'}}
+      })
+      .post('/mirror', {text: ':mirror.a'})
+      .expect(200, {text: {b: 'c'}})
+  })
+
+  it('do, like thru, but without chaining from result promise', function () {
+    var called = 0
+    return flare
+      .post('/mirror', {text: 'boom'})
+      .stash('mirror')
+      .do(function (flare) {
+        assert.deepStrictEqual(flare.stash.mirror, {text: 'boom'})
+        return Promise.resolve(null).then(function () {
+          called += 1
+        })
+      })
+      .expect(200, {text: 'boom'})
+      .expect(function () {
+        assert(called === 1, 'Promise not resolved')
+      })
+  })
 })

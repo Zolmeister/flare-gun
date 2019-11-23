@@ -70,9 +70,11 @@ describe('MyApp', function () {
 
 ##### `.del(String uri, Object body, Object options)` -> `FlarePromise`
 
-##### `.stash(String name)` -> `FlarePromise`
+##### `.stash(String name, Function<Stash> -> Object)` -> `FlarePromise`
 
 ##### `.thru(Function<FlarePromise>(FlarePromise))` -> `FlarePromise`
+
+##### `.do(Function<FlarePromise>)` -> `FlarePromise`
 
 Options are passed through to [request](https://github.com/request/request)
 Stashed variables can be injected in any string, by prefixing with a `:`  

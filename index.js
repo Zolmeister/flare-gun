@@ -441,13 +441,17 @@ FlarePromise.prototype.expect = function (statusCode, schema) {
   })
 }
 
-FlarePromise.prototype.stash = function (name) {
+FlarePromise.prototype.stash = function (name, transformFn) {
   return this.then(function (flare) {
     var body = flare.res.body
 
     if (_.isString(body) && flare.res.headers &&
     _.contains(flare.res.headers['content-type'], 'application/json')) {
       body = JSON.parse(body)
+    }
+
+    if (_.isFunction(transformFn)) {
+      body = transformFn(body)
     }
 
     var stash = _.cloneDeep(flare.stash)
@@ -460,5 +464,12 @@ FlarePromise.prototype.thru = function (cb) {
   var self = this
   return this.then(function (flare) {
     return cb(self)
+  })
+}
+
+FlarePromise.prototype.do = function (cb) {
+  var self = this
+  return this.then(cb).then(function () {
+    return self
   })
 }
