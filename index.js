@@ -1,5 +1,5 @@
 'use strict'
-var FlarePromise = require('bluebird/js/main/promise')()
+var FlarePromise = require('bluebird/js/release/promise')()
 var _request = require('request')
 var Joi = require('joi')
 var fs = FlarePromise.promisifyAll(require('fs'))
