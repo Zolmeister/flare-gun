@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Zolmeister/flare-gun",
   "dependencies": {
     "bluebird": "^3.0.0",
-    "lodash": "^3.6.0",
+    "lodash": "^4.17.13",
     "request": "^2.66.0",
     "socket.io-client": "^2.1.0"
   },
